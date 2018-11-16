@@ -1,5 +1,5 @@
+import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 class ResidualBlock(nn.Module):
     def __init__(self, in_channels, out_channels, k=3, p=1):
@@ -31,6 +31,7 @@ class UpsampleBLock(nn.Module):
 class Generator(nn.Module):
     def __init__(self, n_residual):
         super(Generator, self).__init__()
+        self.n_residual = n_residual
         self.conv1 = nn.Sequential(
             nn.Conv2d(3, 64, kernel_size=9, padding=4),
             nn.PReLU()
@@ -60,48 +61,48 @@ class Generator(nn.Module):
         y = self.conv2(y)
         y = self.upsample(y + cache)
 
-        return (F.tanh(y) + 1) / 2 #(0, 1)
+        return (torch.tanh(y) + 1) / 2 #(0, 1)
     
 class Discriminator(nn.Module):
-    def __init__(self, l=0.2):
-        super(Discriminator, self).__init__()
-        self.net = nn.Sequential(
-            nn.Conv2d(3, 64, kernel_size=3, padding=1),
-            nn.LeakyReLU(l),
+	def __init__(self, l=0.2):
+		super(Discriminator, self).__init__()
+		self.net = nn.Sequential(
+			nn.Conv2d(3, 64, kernel_size=3, padding=1),
+			nn.LeakyReLU(l),
 
-            nn.Conv2d(64, 64, kernel_size=3, stride=2, padding=1),
-            nn.BatchNorm2d(64),
-            nn.LeakyReLU(l),
+			nn.Conv2d(64, 64, kernel_size=3, stride=2, padding=1),
+			nn.BatchNorm2d(64),
+			nn.LeakyReLU(l),
 
-            nn.Conv2d(64, 128, kernel_size=3, padding=1),
-            nn.BatchNorm2d(128),
-            nn.LeakyReLU(l),
+			nn.Conv2d(64, 128, kernel_size=3, padding=1),
+			nn.BatchNorm2d(128),
+			nn.LeakyReLU(l),
 
-            nn.Conv2d(128, 128, kernel_size=3, stride=2, padding=1),
-            nn.BatchNorm2d(128),
-            nn.LeakyReLU(l),
+			nn.Conv2d(128, 128, kernel_size=3, stride=2, padding=1),
+			nn.BatchNorm2d(128),
+			nn.LeakyReLU(l),
 
-            nn.Conv2d(128, 256, kernel_size=3, padding=1),
-            nn.BatchNorm2d(256),
-            nn.LeakyReLU(l),
+			nn.Conv2d(128, 256, kernel_size=3, padding=1),
+			nn.BatchNorm2d(256),
+			nn.LeakyReLU(l),
 
-            nn.Conv2d(256, 256, kernel_size=3, stride=2, padding=1),
-            nn.BatchNorm2d(256),
-            nn.LeakyReLU(l),
+			nn.Conv2d(256, 256, kernel_size=3, stride=2, padding=1),
+			nn.BatchNorm2d(256),
+			nn.LeakyReLU(l),
 
-            nn.Conv2d(256, 512, kernel_size=3, padding=1),
-            nn.BatchNorm2d(512),
-            nn.LeakyReLU(l),
+			nn.Conv2d(256, 512, kernel_size=3, padding=1),
+			nn.BatchNorm2d(512),
+			nn.LeakyReLU(l),
 
-            nn.Conv2d(512, 512, kernel_size=3, stride=2, padding=1),
-            nn.BatchNorm2d(512),
-            nn.LeakyReLU(l),
+			nn.Conv2d(512, 512, kernel_size=3, stride=2, padding=1),
+			nn.BatchNorm2d(512),
+			nn.LeakyReLU(l),
 
-            nn.AdaptiveAvgPool2d(1),
-            nn.Conv2d(512, 1024, kernel_size=1),
-            nn.LeakyReLU(0.2),
-            nn.Conv2d(1024, 1, kernel_size=1)
-        )
+			nn.AdaptiveAvgPool2d(1),
+			nn.Conv2d(512, 1024, kernel_size=1),
+			nn.LeakyReLU(0.2),
+			nn.Conv2d(1024, 1, kernel_size=1)
+		)
 
-    def forward(self, x): 
-        return F.sigmoid(self.net(x)) # self.net(x).view(x.size(0))
+	def forward(self, x): 
+		return torch.sigmoid(self.net(x)) # self.net(x).view(x.size(0))
