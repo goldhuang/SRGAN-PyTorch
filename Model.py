@@ -8,6 +8,7 @@ class ResidualBlock(nn.Module):
         	nn.Conv2d(in_channels, out_channels, kernel_size=k, padding=p)
         	nn.BatchNorm2d(out_channels)
         	nn.PReLU()
+        	
         	nn.Conv2d(out_channels, out_channels, kernel_size=k, padding=p)
         	nn.BatchNorm2d(out_channels)
         )
@@ -57,10 +58,9 @@ class Generator(nn.Module):
             y = self.__getattr__('residual' + str(i+1))(y)
             
         y = self.conv2(y)
-            
         y = self.upsample(y + cache)
 
-        return (F.tanh(y) + 1) / 2
+        return (F.tanh(y) + 1) / 2 #(0, 1)
     
 class Discriminator(nn.Module):
     def __init__(self, l=0.2):
@@ -104,4 +104,4 @@ class Discriminator(nn.Module):
         )
 
     def forward(self, x): 
-        return F.sigmoid(self.net(x).view(x.size(0)))
+        return F.sigmoid(self.net(x)) # self.net(x).view(x.size(0))
