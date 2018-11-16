@@ -5,11 +5,11 @@ class ResidualBlock(nn.Module):
     def __init__(self, in_channels, out_channels, k=3, p=1):
         super(ResidualBlock, self).__init__()
         self.net = nn.Sequential(
-        	nn.Conv2d(in_channels, out_channels, kernel_size=k, padding=p)
-        	nn.BatchNorm2d(out_channels)
-        	nn.PReLU()
+			nn.Conv2d(in_channels, out_channels, kernel_size=k, padding=p),
+			nn.BatchNorm2d(out_channels),
+        	nn.PReLU(),
         	
-        	nn.Conv2d(out_channels, out_channels, kernel_size=k, padding=p)
+        	nn.Conv2d(out_channels, out_channels, kernel_size=k, padding=p),
         	nn.BatchNorm2d(out_channels)
         )
 
@@ -18,15 +18,15 @@ class ResidualBlock(nn.Module):
         
 class UpsampleBLock(nn.Module):
 	def __init__(self, in_channels, scaleFactor, k=3, p=1):
-        super(UpsampleBLock, self).__init__()
-        self.net = nn.Sequential(
-        	nn.Conv2d(in_channels, in_channels * (scaleFactor ** 2), kernel_size=k, padding=p)
-        	nn.PixelShuffle(scaleFactor)
+		super(UpsampleBLock, self).__init__()
+		self.net = nn.Sequential(
+        	nn.Conv2d(in_channels, in_channels * (scaleFactor ** 2), kernel_size=k, padding=p),
+        	nn.PixelShuffle(scaleFactor),
         	nn.PReLU()
 		)
-		
-    def forward(self, x):
-        return self.net(x)
+	
+	def forward(self, x):
+		return self.net(x)
         
 class Generator(nn.Module):
     def __init__(self, n_residual):
@@ -37,7 +37,7 @@ class Generator(nn.Module):
         )
         
         for i in range(n_residual):
-            self.add_module('residual' + str(i+1), residualBlock(64, 64))
+            self.add_module('residual' + str(i+1), ResidualBlock(64, 64))
         
         self.conv2 = nn.Sequential(
             nn.Conv2d(64, 64, kernel_size=3, padding=1),
@@ -45,8 +45,8 @@ class Generator(nn.Module):
         )
         
         self.upsample = nn.Sequential(
-        	UpsampleBLock(64, 2)
-        	UpsampleBLock(64, 2)
+        	UpsampleBLock(64, 2),
+        	UpsampleBLock(64, 2),
         	nn.Conv2d(64, 3, kernel_size=9, padding=4)
         )
 

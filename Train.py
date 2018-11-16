@@ -12,7 +12,7 @@ from model import Generator, Discriminator
 
 import torch
 import torch.nn as nn
-import torchvision.models.vgg.vgg16 as vgg16
+from torchvision.models.vgg import vgg16
 
 from os import listdir
 from os.path import join
@@ -62,7 +62,7 @@ class GeneratorLoss(nn.Module):
         super(GeneratorLoss, self).__init__()
         vgg = vgg16(pretrained=True)
         self.perception_network = nn.Sequential(*list(vgg.features)[:31]).eval()
-        for param in loss_network.parameters():
+        for param in self.perception_network.parameters():
             param.requires_grad = False
         self.mse_loss = nn.MSELoss()
 
@@ -71,7 +71,7 @@ class GeneratorLoss(nn.Module):
         perception_loss = self.mse_loss(self.perception_network(out_images), self.perception_network(target_images))
         image_loss = self.mse_loss(out_images, target_images)
         
-        return image_loss + 0.001 * adversarial_loss + 0.001 * perception_loss
+        return image_loss + 0.001 * adversarial_loss + 0.0001 * perception_loss
 
 parser = argparse.ArgumentParser(description='SRGAN Train')
 parser.add_argument('--crop_size', default=64, type=int, help='training images crop size')
@@ -106,7 +106,6 @@ for epoch in range(1, n_epoch + 1):
     netD.train()
     
     for data, target in train_bar:
-    
         # Train D
         real_img = Variable(target)
         real_img = real_img.cuda()
@@ -133,5 +132,5 @@ for epoch in range(1, n_epoch + 1):
         d_loss = 1 - real_out + fake_out
 
     # save model parameters
-    torch.save(netG.state_dict(), 'epochs/netG_epoch_%d_%d.pth' % (UPSCALE_FACTOR, epoch))
-    torch.save(netD.state_dict(), 'epochs/netD_epoch_%d_%d.pth' % (UPSCALE_FACTOR, epoch))
+    torch.save(netG.state_dict(), 'epochs/netG_epoch_%d.pth' % (epoch))
+    torch.save(netD.state_dict(), 'epochs/netD_epoch_%d.pth' % (epoch))
