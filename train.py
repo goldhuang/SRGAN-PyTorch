@@ -30,6 +30,7 @@ def calculate_valid_crop_size(crop_size, upscale_factor):
 
 def hr_preprocess(crop_size):
     return Compose([
+    	# CenterCrop(256)
         RandomCrop(crop_size),
         ToTensor(),
     ])
