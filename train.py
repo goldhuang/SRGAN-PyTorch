@@ -149,7 +149,8 @@ for epoch in range(1, n_epoch + 1):
             cache['g_loss'] / cache['batch_sizes'],
             cache['d_score'] / cache['batch_sizes'],
             cache['g_score'] / cache['batch_sizes']))
-            
-    # save model parameters
-	torch.save(netG.state_dict(), 'epochs/netG_epoch_%d.pth' % (epoch))
-	torch.save(netD.state_dict(), 'epochs/netD_epoch_%d.pth' % (epoch))
+    
+	if (epoch == n_epoch or epoch%10 == 0):        
+    	# save model parameters
+		torch.save(netG.state_dict(), 'epochs/netG_epoch_%d.pth' % (epoch))
+		torch.save(netD.state_dict(), 'epochs/netD_epoch_%d.pth' % (epoch))
