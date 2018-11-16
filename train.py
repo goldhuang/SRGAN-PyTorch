@@ -1,26 +1,26 @@
 import os
+from os import listdir
+from os.path import join
 import argparse
 
-import torch.optim as optim
-import torch.utils.data
-import torchvision.utils as utils
-from torch.autograd import Variable
-from torch.utils.data import DataLoader
-from tqdm import tqdm
+from PIL import Image
 
-from model import Generator, Discriminator
+from tqdm import tqdm
 
 import torch
 import torch.nn as nn
+import torch.optim as optim
+from torch.autograd import Variable
+
+import torch.utils.data
+from torch.utils.data import DataLoader
+from torch.utils.data.dataset import Dataset
+
+import torchvision.utils as utils
+from torchvision.transforms import Compose, RandomCrop, ToTensor, ToPILImage, CenterCrop, Resize
 from torchvision.models.vgg import vgg16
 
-from os import listdir
-from os.path import join
-
-from PIL import Image
-from torch.utils.data.dataset import Dataset
-from torchvision.transforms import Compose, RandomCrop, ToTensor, ToPILImage, CenterCrop, Resize
-
+from model import Generator, Discriminator
 
 def is_image_file(filename):
     return any(filename.endswith(extension) for extension in ['.png', '.jpg', '.jpeg', '.PNG', '.JPG', '.JPEG'])
@@ -85,6 +85,9 @@ n_epoch = opt.num_epochs
 train_set = TrainDataset('data/train', crop_size=input_size, upscale_factor=4)
 train_loader = DataLoader(dataset=train_set, num_workers=1, batch_size=64, shuffle=True)
 
+if torch.cuda.is_available() != True:
+	print ('!!!!!!!!!!!!!!USING CUP!!!!!!!!!!!!!')
+
 netG = Generator(8)
 print('# generator parameters:', sum(param.numel() for param in netG.parameters()))
 netD = Discriminator()
@@ -96,8 +99,6 @@ if torch.cuda.is_available():
 	netG.cuda()
 	netD.cuda()
 	lossG.cuda()
-else :
-	print ('!!!!!!!!!!!!!!USING CUP!!!!!!!!!!!!!')
 
 optimizerG = optim.Adam(netG.parameters())
 optimizerD = optim.Adam(netD.parameters())
@@ -137,13 +138,13 @@ for epoch in range(1, n_epoch + 1):
 		fake_out = netD(fake_img).mean()
 
 		g_loss = lossG(fake_out, fake_img, real_img)
-		cache['g_loss'] += g_loss.data[0] * batch_size
+		cache['g_loss'] += g_loss.item() * batch_size
 		d_loss = 1 - real_out + fake_out
-		cache['d_loss'] += d_loss.data[0] * batch_size
-		cache['d_score'] += real_out.data[0] * batch_size
-		cache['g_score'] += fake_out.data[0] * batch_size
+		cache['d_loss'] += d_loss.item() * batch_size
+		cache['d_score'] += real_out.item() * batch_size
+		cache['g_score'] += fake_out.item() * batch_size
 
-	train_bar.set_description(desc='[%d/%d] Loss_D: %.4f Loss_G: %.4f D(x): %.4f D(G(z)): %.4f' % (
+		train_bar.set_description(desc='[%d/%d] Loss_D: %.4f Loss_G: %.4f D(x): %.4f D(G(z)): %.4f' % (
             epoch, n_epoch, cache['d_loss'] / cache['batch_sizes'],
             cache['g_loss'] / cache['batch_sizes'],
             cache['d_score'] / cache['batch_sizes'],
