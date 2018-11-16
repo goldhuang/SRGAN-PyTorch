@@ -83,7 +83,7 @@ input_size = opt.crop_size
 n_epoch = opt.num_epochs
 
 train_set = TrainDataset('data/train', crop_size=input_size, upscale_factor=4)
-train_loader = DataLoader(dataset=train_set, num_workers=2, batch_size=64, shuffle=True)
+train_loader = DataLoader(dataset=train_set, num_workers=1, batch_size=64, shuffle=True)
 
 netG = Generator(8)
 print('# generator parameters:', sum(param.numel() for param in netG.parameters()))
@@ -92,58 +92,63 @@ print('# discriminator parameters:', sum(param.numel() for param in netD.paramet
 
 lossG = GeneratorLoss()
 
-netG.cuda()
-netD.cuda()
-lossG.cuda()
+if torch.cuda.is_available():
+	netG.cuda()
+	netD.cuda()
+	lossG.cuda()
+else :
+	print ('!!!!!!!!!!!!!!USING CUP!!!!!!!!!!!!!')
 
 optimizerG = optim.Adam(netG.parameters())
 optimizerD = optim.Adam(netD.parameters())
 
 for epoch in range(1, n_epoch + 1):
-    train_bar = tqdm(train_loader)
+	train_bar = tqdm(train_loader)
 	cache = {'batch_sizes': 0, 'd_loss': 0, 'g_loss': 0, 'd_score': 0, 'g_score': 0}
 	
-    netG.train()
-    netD.train()
+	netG.train()
+	netD.train()
     
-    for data, target in train_bar:
-        batch_size = data.size(0)
-        cache['batch_sizes'] += batch_size
+	for data, target in train_bar:
+		batch_size = data.size(0)
+		cache['batch_sizes'] += batch_size
         # Train D
-        real_img = Variable(target)
-        real_img = real_img.cuda()
-        z = Variable(data)
-        z = z.cuda()
-        fake_img = netG(z)
+		real_img = Variable(target)
+		if torch.cuda.is_available():
+			real_img = real_img.cuda()
+		z = Variable(data)
+		if torch.cuda.is_available():
+			z = z.cuda()
+		fake_img = netG(z)
 
-        netD.zero_grad()
-        real_out = netD(real_img).mean()
-        fake_out = netD(fake_img).mean()
-        d_loss = 1 - real_out + fake_out
-        d_loss.backward(retain_graph=True)
-        optimizerD.step()
+		netD.zero_grad()
+		real_out = netD(real_img).mean()
+		fake_out = netD(fake_img).mean()
+		d_loss = 1 - real_out + fake_out
+		d_loss.backward(retain_graph=True)
+		optimizerD.step()
 
         # Train G
-        netG.zero_grad()
-        g_loss = lossG(fake_out, fake_img, real_img)
-        g_loss.backward()
-        optimizerG.step()
-        fake_img = netG(z)
-        fake_out = netD(fake_img).mean()
+		netG.zero_grad()
+		g_loss = lossG(fake_out, fake_img, real_img)
+		g_loss.backward()
+		optimizerG.step()
+		fake_img = netG(z)
+		fake_out = netD(fake_img).mean()
 
-        g_loss = lossG(fake_out, fake_img, real_img)
-        cache['g_loss'] += g_loss.data[0] * batch_size
-        d_loss = 1 - real_out + fake_out
-        cache['d_loss'] += d_loss.data[0] * batch_size
-        cache['d_score'] += real_out.data[0] * batch_size
-        cache['g_score'] += fake_out.data[0] * batch_size
+		g_loss = lossG(fake_out, fake_img, real_img)
+		cache['g_loss'] += g_loss.data[0] * batch_size
+		d_loss = 1 - real_out + fake_out
+		cache['d_loss'] += d_loss.data[0] * batch_size
+		cache['d_score'] += real_out.data[0] * batch_size
+		cache['g_score'] += fake_out.data[0] * batch_size
 
-    train_bar.set_description(desc='[%d/%d] Loss_D: %.4f Loss_G: %.4f D(x): %.4f D(G(z)): %.4f' % (
+	train_bar.set_description(desc='[%d/%d] Loss_D: %.4f Loss_G: %.4f D(x): %.4f D(G(z)): %.4f' % (
             epoch, n_epoch, cache['d_loss'] / cache['batch_sizes'],
             cache['g_loss'] / cache['batch_sizes'],
             cache['d_score'] / cache['batch_sizes'],
             cache['g_score'] / cache['batch_sizes']))
             
     # save model parameters
-    torch.save(netG.state_dict(), 'epochs/netG_epoch_%d.pth' % (epoch))
-    torch.save(netD.state_dict(), 'epochs/netD_epoch_%d.pth' % (epoch))
+	torch.save(netG.state_dict(), 'epochs/netG_epoch_%d.pth' % (epoch))
+	torch.save(netD.state_dict(), 'epochs/netD_epoch_%d.pth' % (epoch))
