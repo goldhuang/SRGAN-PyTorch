@@ -19,7 +19,7 @@ def calculate_valid_crop_size(crop_size, upscale_factor):
 
 def hr_preprocess(crop_size):
     return Compose([
-    	# CenterCrop(256)
+    	#CenterCrop(384),
         RandomCrop(crop_size),
         ToTensor(),
     ])
@@ -30,7 +30,35 @@ def lr_preprocess(crop_size, upscale_factor):
         Resize(crop_size // upscale_factor, interpolation=Image.BICUBIC),
         ToTensor()
     ])
-    
+
+def display_transform():
+    return Compose([
+        ToPILImage(),
+        Resize(400),
+        CenterCrop(400),
+        ToTensor()
+    ])
+	
+class DevDataset(Dataset):
+    def __init__(self, dataset_dir, upscale_factor):
+        super(DevDataset, self).__init__()
+        self.upscale_factor = upscale_factor
+        self.image_filenames = [join(dataset_dir, x) for x in listdir(dataset_dir) if is_image_file(x)]
+
+    def __getitem__(self, index):
+        hr_image = Image.open(self.image_filenames[index])
+        w, h = hr_image.size
+        crop_size = calculate_valid_crop_size(min(w, h), self.upscale_factor)
+        lr_scale = Resize(crop_size // self.upscale_factor, interpolation=Image.BICUBIC)
+        hr_scale = Resize(crop_size, interpolation=Image.BICUBIC)
+        hr_image = CenterCrop(crop_size)(hr_image)
+        lr_image = lr_scale(hr_image)
+        hr_restore_img = hr_scale(lr_image)
+        return ToTensor()(lr_image), ToTensor()(hr_restore_img), ToTensor()(hr_image)
+
+    def __len__(self):
+        return len(self.image_filenames)
+
 class TrainDataset(Dataset):
     def __init__(self, dataset_dir, crop_size, upscale_factor):
         super(TrainDataset, self).__init__()
