@@ -59,6 +59,37 @@ def main():
 	optimizerG = optim.Adam(netG.parameters())
 	optimizerD = optim.Adam(netD.parameters())
 
+	# Pre-train generator using only MSE loss
+	for epoch in range(100):
+		train_bar = tqdm(train_loader)
+		
+		netG.train()
+		
+		for data, target in train_bar:
+			real_img_hr = Variable(target)
+			if torch.cuda.is_available():
+				real_img_hr = real_img_hr.cuda()
+				
+			lowres = Variable(data)
+			if torch.cuda.is_available():
+				lowres = lowres.cuda()
+			fake_img_hr = netG(lowres)
+			
+			logits_real = netD(real_img_hr)
+			logits_fake = netD(fake_img_hr)
+
+			# Train G
+			netG.zero_grad()
+			
+			image_loss = mse(fake_img_hr, real_img_hr)
+
+			image_loss.backward()
+			optimizerG.step()
+
+			# Print information by tqdm
+			train_bar.set_description(desc='[%d/%d] Loss_G: %.4f' % (epoch, n_epoch, image_loss))
+
+
 	for epoch in range(1, n_epoch + 1):
 		train_bar = tqdm(train_loader)
 		
