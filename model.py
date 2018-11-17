@@ -7,7 +7,7 @@ class ResidualBlock(nn.Module):
         self.net = nn.Sequential(
 			nn.Conv2d(in_channels, out_channels, kernel_size=k, padding=p),
 			nn.BatchNorm2d(out_channels),
-        	nn.PReLU(),
+			nn.PReLU(),
         	
         	nn.Conv2d(out_channels, out_channels, kernel_size=k, padding=p),
         	nn.BatchNorm2d(out_channels)
@@ -20,9 +20,9 @@ class UpsampleBLock(nn.Module):
 	def __init__(self, in_channels, scaleFactor, k=3, p=1):
 		super(UpsampleBLock, self).__init__()
 		self.net = nn.Sequential(
-        	nn.Conv2d(in_channels, in_channels * (scaleFactor ** 2), kernel_size=k, padding=p),
-        	nn.PixelShuffle(scaleFactor),
-        	nn.PReLU()
+			nn.Conv2d(in_channels, in_channels * (scaleFactor ** 2), kernel_size=k, padding=p),
+			nn.PixelShuffle(scaleFactor),
+			nn.PReLU()
 		)
 	
 	def forward(self, x):
@@ -105,4 +105,4 @@ class Discriminator(nn.Module):
 		)
 
 	def forward(self, x): 
-		return torch.sigmoid(self.net(x)) # self.net(x).view(x.size(0))
+		return torch.sigmoid(self.net(x))
