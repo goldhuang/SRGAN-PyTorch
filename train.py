@@ -44,7 +44,7 @@ def main():
 	if not torch.cuda.is_available():
 		print ('!!!!!!!!!!!!!!USING CPU!!!!!!!!!!!!!')
 
-	netG = Generator(n_residual=4)
+	netG = Generator()
 	print('# generator parameters:', sum(param.numel() for param in netG.parameters()))
 	netD = Discriminator()
 	print('# discriminator parameters:', sum(param.numel() for param in netD.parameters()))
@@ -92,7 +92,7 @@ def main():
 			image_loss = mse(fake_img_hr, real_img_hr)
 			perception_loss = mse(netV(fake_img_hr), netV(real_img_hr))
 			adversarial_loss = bce(logits_fake, torch.ones_like(logits_fake))
-			g_loss = image_loss + 0.4*2e-6*perception_loss + 1e-3*adversarial_loss
+			g_loss = image_loss + 2e-6*perception_loss + 1e-3*adversarial_loss
 
 			g_loss.backward()
 			optimizerG.step()

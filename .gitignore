@@ -1,2 +1,6 @@
 data/train/*
 *.pyc
+*.pth
+generated/*
+*.png
+*.DS_Store

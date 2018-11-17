@@ -29,7 +29,7 @@ class UpsampleBLock(nn.Module):
 		return self.net(x)
         
 class Generator(nn.Module):
-    def __init__(self, n_residual):
+    def __init__(self, n_residual=4):
         super(Generator, self).__init__()
         self.n_residual = n_residual
         self.conv1 = nn.Sequential(
