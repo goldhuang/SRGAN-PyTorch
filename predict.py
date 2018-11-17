@@ -1,6 +1,8 @@
 import argparse
 import time
 
+from os.path import basename, normpath
+
 import torch
 from PIL import Image
 from torch.autograd import Variable
@@ -30,4 +32,4 @@ if torch.cuda.is_available():
 
 out = model(image)
 out_img = ToPILImage()(out[0].data.cpu())
-out_img.save('generated/'+lr)
+out_img.save('generated/' + basename(normpath(lr)))
