@@ -58,100 +58,92 @@ class TrainDataset(Dataset):
     def __len__(self):
         return len(self.image_filenames)
 
-class GeneratorLoss(nn.Module):
-    def __init__(self):
-        super(GeneratorLoss, self).__init__()
-        vgg = vgg16(pretrained=True)
-        self.perception_network = nn.Sequential(*list(vgg.features)[:31]).eval()
-        for param in self.perception_network.parameters():
-            param.requires_grad = False
-        self.mse_loss = nn.MSELoss()
-
-    def forward(self, out_labels, out_images, target_images):
-        adversarial_loss = torch.mean(1 - out_labels)
-        perception_loss = self.mse_loss(self.perception_network(out_images), self.perception_network(target_images))
-        image_loss = self.mse_loss(out_images, target_images)
-        
-        return image_loss + 0.001 * adversarial_loss + 0.0001 * perception_loss
-
 parser = argparse.ArgumentParser(description='SRGAN Train')
 parser.add_argument('--crop_size', default=64, type=int, help='training images crop size')
 parser.add_argument('--num_epochs', default=100, type=int, help='training epoch')
+parser.add_argument('--batch_size', default=64, type=int, help='training batch size')
 
 opt = parser.parse_args()
 
 input_size = opt.crop_size
 n_epoch = opt.num_epochs
+batch_size = opt.batch_size
 
 train_set = TrainDataset('data/train', crop_size=input_size, upscale_factor=4)
-train_loader = DataLoader(dataset=train_set, num_workers=1, batch_size=64, shuffle=True)
+train_loader = DataLoader(dataset=train_set, num_workers=1, batch_size=batch_size, shuffle=True)
 
 if torch.cuda.is_available() != True:
 	print ('!!!!!!!!!!!!!!USING CUP!!!!!!!!!!!!!')
 
-netG = Generator(8)
+netG = Generator(n_residual=4)
 print('# generator parameters:', sum(param.numel() for param in netG.parameters()))
 netD = Discriminator()
 print('# discriminator parameters:', sum(param.numel() for param in netD.parameters()))
 
-lossG = GeneratorLoss()
+mse = nn.MSELoss()
+bce = nn.BCELoss()
+
+vgg = vgg16(pretrained=True)
+netV = nn.Sequential(*list(vgg.features)[:31]).eval()
+for param in netV.parameters():
+    param.requires_grad = False
 
 if torch.cuda.is_available():
 	netG.cuda()
 	netD.cuda()
-	lossG.cuda()
+	netV.cuda()
+	mse.cuda()
+	bce.cuda()
 
 optimizerG = optim.Adam(netG.parameters())
 optimizerD = optim.Adam(netD.parameters())
 
 for epoch in range(1, n_epoch + 1):
 	train_bar = tqdm(train_loader)
-	cache = {'batch_sizes': 0, 'd_loss': 0, 'g_loss': 0, 'd_score': 0, 'g_score': 0}
 	
 	netG.train()
 	netD.train()
     
 	for data, target in train_bar:
+		cache = {'batch_sizes': 0, 'd_loss': 0, 'g_loss': 0, 'd_score': 0, 'g_score': 0}
+		
 		batch_size = data.size(0)
 		cache['batch_sizes'] += batch_size
+		
+		real_img_hr = Variable(target)
+		if torch.cuda.is_available():
+			real_img_hr = real_img_hr.cuda()
+			
+		lowres = Variable(data)
+		if torch.cuda.is_available():
+			lowres = lowres.cuda()
+		fake_img_hr = netG(lowres)
+		
+		logits_real = netD(real_img_hr)
+		logits_fake = netD(fake_img_hr)
+			
         # Train D
-		real_img = Variable(target)
-		if torch.cuda.is_available():
-			real_img = real_img.cuda()
-		z = Variable(data)
-		if torch.cuda.is_available():
-			z = z.cuda()
-		fake_img = netG(z)
-
 		netD.zero_grad()
-		real_out = netD(real_img).mean()
-		fake_out = netD(fake_img).mean()
-		d_loss = 1 - real_out + fake_out
+		
+		d_loss = bce(logits_real, torch.ones_like(logits_real)) + bce(logits_fake, torch.zeros_like(logits_fake))
+		
 		d_loss.backward(retain_graph=True)
 		optimizerD.step()
 
         # Train G
 		netG.zero_grad()
-		g_loss = lossG(fake_out, fake_img, real_img)
+		
+		image_loss = mse(fake_img_hr, real_img_hr)
+		perception_loss = mse(netV(fake_img_hr), netV(real_img_hr))
+		adversarial_loss = bce(logits_fake, torch.ones_like(logits_fake))
+		g_loss = image_loss + 0.4*2e-6*perception_loss + 1e-3*adversarial_loss
+
 		g_loss.backward()
 		optimizerG.step()
-		fake_img = netG(z)
-		fake_out = netD(fake_img).mean()
 
-		g_loss = lossG(fake_out, fake_img, real_img)
-		cache['g_loss'] += g_loss.item() * batch_size
-		d_loss = 1 - real_out + fake_out
-		cache['d_loss'] += d_loss.item() * batch_size
-		cache['d_score'] += real_out.item() * batch_size
-		cache['g_score'] += fake_out.item() * batch_size
-
-		train_bar.set_description(desc='[%d/%d] Loss_D: %.4f Loss_G: %.4f D(x): %.4f D(G(z)): %.4f' % (
-            epoch, n_epoch, cache['d_loss'] / cache['batch_sizes'],
-            cache['g_loss'] / cache['batch_sizes'],
-            cache['d_score'] / cache['batch_sizes'],
-            cache['g_score'] / cache['batch_sizes']))
-    
-	if (epoch == n_epoch or epoch%10 == 0):        
-    	# save model parameters
+		train_bar.set_description(desc='[%d/%d] Loss_D: %.4f Loss_G: %.4f' % (epoch, n_epoch, d_loss, g_loss))
+            
+	# save model parameters
+	if epoch == n_epoch or epoch%10 == 0:
 		torch.save(netG.state_dict(), 'epochs/netG_epoch_%d.pth' % (epoch))
 		torch.save(netD.state_dict(), 'epochs/netD_epoch_%d.pth' % (epoch))
