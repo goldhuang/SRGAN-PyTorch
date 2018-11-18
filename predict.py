@@ -17,19 +17,19 @@ opt = parser.parse_args()
 
 lr = opt.lr_image
 pth = opt.model_name
-
-model = Generator().eval()
-if torch.cuda.is_available():
-	model.cuda()
-model.load_state_dict(torch.load(pth))
-
-image = Image.open(lr)
 with torch.no_grad():
+	model = Generator().eval()
+	if torch.cuda.is_available():
+		model.cuda()
+	model.load_state_dict(torch.load(pth))
+
+	image = Image.open(lr)
+
 	image = Variable(ToTensor()(image)).unsqueeze(0)
 	
-if torch.cuda.is_available():
-    image = image.cuda()
+	if torch.cuda.is_available():
+		image = image.cuda()
 
-out = model(image)
-out_img = ToPILImage()(out[0].data.cpu())
-out_img.save('generated/' + basename(normpath(lr)))
+	out = model(image)
+	out_img = ToPILImage()(out[0].data.cpu())
+	out_img.save('generated/' + basename(normpath(lr)))

@@ -47,8 +47,7 @@ class DevDataset(Dataset):
 
     def __getitem__(self, index):
         hr_image = Image.open(self.image_filenames[index])
-        w, h = hr_image.size
-        crop_size = calculate_valid_crop_size(min(w, h), self.upscale_factor)
+        crop_size = calculate_valid_crop_size(128, self.upscale_factor)
         lr_scale = Resize(crop_size // self.upscale_factor, interpolation=Image.BICUBIC)
         hr_scale = Resize(crop_size, interpolation=Image.BICUBIC)
         hr_image = CenterCrop(crop_size)(hr_image)
