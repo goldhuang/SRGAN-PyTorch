@@ -25,7 +25,7 @@ from model import Generator, Discriminator
 
 def main():
 	n_epoch_pretrain = 50
-	use_tensorboard = False
+	use_tensorboard = True
 
 	parser = argparse.ArgumentParser(description='SRGAN Train')
 	parser.add_argument('--crop_size', default=64, type=int, help='training images crop size')
@@ -144,9 +144,9 @@ def main():
 			d_loss_f = bce(logits_fake, torch.zeros_like(logits_fake))
 			d_loss = d_loss_t + d_loss_f
 			
-			cache['d_loss_t'] += d_loss_t
-			cache['d_loss_f'] += d_loss_f
-			cache['d_loss'] += d_loss
+			cache['d_loss_t'] += d_loss_t.item()
+			cache['d_loss_f'] += d_loss_f.item()
+			cache['d_loss'] += d_loss.item()
 			
 			d_loss.backward(retain_graph=True)
 			optimizerD.step()
@@ -159,10 +159,10 @@ def main():
 			adversarial_loss = bce(logits_fake, torch.ones_like(logits_fake))
 			g_loss = image_loss + 2e-6*perception_loss + 1e-3*adversarial_loss
 
-			cache['image_loss'] += image_loss
-			cache['perception_loss'] += perception_loss
-			cache['adversarial_loss'] += adversarial_loss
-			cache['g_loss'] += g_loss
+			cache['image_loss'] += image_loss.item()
+			cache['perception_loss'] += perception_loss.item()
+			cache['adversarial_loss'] += adversarial_loss.item()
+			cache['g_loss'] += g_loss.item()
 
 			g_loss.backward()
 			optimizerG.step()
