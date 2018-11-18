@@ -3,6 +3,7 @@ import argparse
 import time
 
 from tqdm import tqdm
+from tensorboard_logger import configure, log_value
 
 import torch
 import torch.nn as nn
@@ -72,12 +73,14 @@ def main():
 	start_time = time.process_time()
 	
 	# Pre-train generator using only MSE loss
-	if False:
+	if True:
+		configure("pretrain-log")
 		for epoch in range(n_epoch_pretrain):
 			train_bar = tqdm(train_loader)
 			
 			netG.train()
 			
+			gloss_cache = 0.0
 			for data, target in train_bar:
 				real_img_hr = Variable(target)
 				if torch.cuda.is_available():
@@ -95,21 +98,34 @@ def main():
 				netG.zero_grad()
 				
 				image_loss = mse(fake_img_hr, real_img_hr)
-
+				gloss_cache += image_loss
+				
 				image_loss.backward()
 				optimizerG.step()
 
 				# Print information by tqdm
 				train_bar.set_description(desc='[%d/%d] Loss_G: %.4f' % (epoch, n_epoch, image_loss))
-	
+			
+			log_value('pretrain-gloss', gloss_cache/len(train_loader), epoch)
+			
 	pretrain_done_time = time.process_time()	
 	pretrain_time = pretrain_done_time - start_time
-
+	
+	configure("train-log")
 	for epoch in range(1, n_epoch + 1):
 		train_bar = tqdm(train_loader)
 		
 		netG.train()
 		netD.train()
+		
+		image_loss_cache = 0.0
+		perception_loss_cache = 0.0
+		adversarial_loss_cache = 0.0
+		g_loss_cache = 0.0
+		
+		d_loss_t_cache = 0.0
+		d_loss_f_cache = 0.0
+		d_loss_cache = 0.0
 		
 		for data, target in train_bar:
 			real_img_hr = Variable(target)
@@ -127,7 +143,13 @@ def main():
 			# Train D
 			netD.zero_grad()
 			
-			d_loss = bce(logits_real, torch.ones_like(logits_real)) + bce(logits_fake, torch.zeros_like(logits_fake))
+			d_loss_t = bce(logits_real, torch.ones_like(logits_real))
+			d_loss_f = bce(logits_fake, torch.zeros_like(logits_fake))
+			d_loss = d_loss_t + d_loss_f
+			
+			d_loss_t_cache += d_loss_t
+			d_loss_f_cache += d_loss_f
+			d_loss_cache += d_loss
 			
 			d_loss.backward(retain_graph=True)
 			optimizerD.step()
@@ -140,11 +162,25 @@ def main():
 			adversarial_loss = bce(logits_fake, torch.ones_like(logits_fake))
 			g_loss = image_loss + 2e-6*perception_loss + 1e-3*adversarial_loss
 
+			image_loss_cache += image_loss
+			perception_loss_cache += perception_loss
+			adversarial_loss_cache += adversarial_loss
+			g_loss_cache += g_loss
+
 			g_loss.backward()
 			optimizerG.step()
 
 			# Print information by tqdm
-			train_bar.set_description(desc='[%d/%d] Loss_D: %.4f Loss_G: %.4f' % (epoch, n_epoch, d_loss, g_loss))
+			train_bar.set_description(desc='[%d/%d] Loss_D: %.4f = %.4f + %.4f Loss_G: %.4f = %.4f + %.4f + %.4f' % (epoch, n_epoch, d_loss, d_loss_t, d_loss_f, g_loss, image_loss, perception_loss, adversarial_loss))
+		
+		log_value('d_loss_t', d_loss_t_cache/len(train_loader), epoch)
+		log_value('d_loss_f', d_loss_f_cache/len(train_loader), epoch)
+		log_value('d_loss', d_loss_cache/len(train_loader), epoch)
+		
+		log_value('image_loss', image_loss_cache/len(train_loader), epoch)
+		log_value('perception_loss', perception_loss_cache/len(train_loader), epoch)
+		log_value('adversarial_loss', adversarial_loss_cache/len(train_loader), epoch)
+		log_value('g_loss', g_loss_cache/len(train_loader), epoch)
 		
 		if epoch == n_epoch or epoch%5 == 0:
 			# Visualize results
