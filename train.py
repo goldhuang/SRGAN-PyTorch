@@ -25,6 +25,7 @@ from model import Generator, Discriminator
 
 def main():
 	n_epoch_pretrain = 50
+	use_tensorboard = False
 
 	parser = argparse.ArgumentParser(description='SRGAN Train')
 	parser.add_argument('--crop_size', default=64, type=int, help='training images crop size')
