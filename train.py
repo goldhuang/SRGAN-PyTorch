@@ -32,7 +32,7 @@ def main():
 	parser.add_argument('--num_epochs', default=100, type=int, help='training epoch')
 	parser.add_argument('--batch_size', default=64, type=int, help='training batch size')
 	parser.add_argument('--train_set', default='data/train', type=str, help='train set path')
-	parser.add_argument('--check_point', type=str, default='', help="check point name to load")
+	parser.add_argument('--check_point', type=int, default=0, help="continue with previous check_point")
 
 	opt = parser.parse_args()
 
@@ -63,20 +63,21 @@ def main():
 	netD = Discriminator()
 	print('# discriminator parameters:', sum(param.numel() for param in netD.parameters()))
 
-	if check_point != '':
-		netG.load_state_dict(torch.load('epochs/netG_' + check_point + '.pth'))
-		
-		d_path = 'epochs/netD_' + check_point + '.pth'
-		if os.path.isfile(d_path): 
-			netD.load_state_dict(torch.load())
-
 	if torch.cuda.is_available():
 		netG.cuda()
 		netD.cuda()
 		netV.cuda()
 		mse.cuda()
 		bce.cuda()
-
+		
+	if check_point != 0:
+		if torch.cuda.is_available():
+			netG.load_state_dict(torch.load('epochs/netG_epoch_' + str(check_point) + '_gpu.pth'))
+			netD.load_state_dict(torch.load('epochs/netD_epoch_' + str(check_point) + '_gpu.pth'))
+		else :
+			netG.load_state_dict(torch.load('epochs/netG_epoch_' + str(check_point) + '_cpu.pth'))
+			netD.load_state_dict(torch.load('epochs/netD_epoch_' + str(check_point) + '_cpu.pth'))
+			
 	optimizerG = optim.Adam(netG.parameters())
 	optimizerD = optim.Adam(netD.parameters())
 	
@@ -86,7 +87,7 @@ def main():
 	start_time = time.process_time()
 	
 	# Pre-train generator using only MSE loss
-	if check_point == '':
+	if check_point == 0:
 		for epoch in range(1, n_epoch_pretrain + 1):
 			train_bar = tqdm(train_loader)
 			
@@ -123,16 +124,16 @@ def main():
 				log_value('pretrain-gloss', cache['g_loss']/len(train_loader), epoch)
 	
 	
-	# Save model parameters	
-	if torch.cuda.is_available():
-		torch.save(netG.state_dict(), 'epochs/netG_epoch_pre_gpu.pth')
-	else:
-		torch.save(netG.state_dict(), 'epochs/netG_epoch_pre_cpu.pth')
+			# Save model parameters	
+			if torch.cuda.is_available():
+				torch.save(netG.state_dict(), 'epochs/netG_epoch_pre_gpu.pth')
+			else:
+				torch.save(netG.state_dict(), 'epochs/netG_epoch_pre_cpu.pth')
 		
 	pretrain_done_time = time.process_time()	
 	pretrain_time = pretrain_done_time - start_time
 		
-	for epoch in range(1, n_epoch + 1):
+	for epoch in range(1 + check_point, n_epoch + 1 + check_point):
 		train_bar = tqdm(train_loader)
 		
 		netG.train()
