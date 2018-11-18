@@ -69,18 +69,21 @@ def main():
 
 	optimizerG = optim.Adam(netG.parameters())
 	optimizerD = optim.Adam(netD.parameters())
-
+	
+	if use_tensorboard:
+		configure("tensorboard/srgan-" + str(n_epoch_pretrain) + '-' + str(n_epoch), flush_secs=5)
+	
 	start_time = time.process_time()
 	
 	# Pre-train generator using only MSE loss
 	if True:
-		configure("pretrain-log")
-		for epoch in range(n_epoch_pretrain):
+		for epoch in range(1, n_epoch_pretrain + 1):
 			train_bar = tqdm(train_loader)
 			
 			netG.train()
 			
-			gloss_cache = 0.0
+			cache = {'g_loss': 0}
+			
 			for data, target in train_bar:
 				real_img_hr = Variable(target)
 				if torch.cuda.is_available():
@@ -98,34 +101,27 @@ def main():
 				netG.zero_grad()
 				
 				image_loss = mse(fake_img_hr, real_img_hr)
-				gloss_cache += image_loss
+				cache['g_loss'] += image_loss
 				
 				image_loss.backward()
 				optimizerG.step()
 
 				# Print information by tqdm
-				train_bar.set_description(desc='[%d/%d] Loss_G: %.4f' % (epoch, n_epoch, image_loss))
+				train_bar.set_description(desc='[%d/%d] Loss_G: %.4f' % (epoch, n_epoch_pretrain, image_loss))
 			
-			log_value('pretrain-gloss', gloss_cache/len(train_loader), epoch)
+			if use_tensorboard:
+				log_value('pretrain-gloss', cache['g_loss']/len(train_loader), epoch)
 			
 	pretrain_done_time = time.process_time()	
 	pretrain_time = pretrain_done_time - start_time
 	
-	configure("train-log")
 	for epoch in range(1, n_epoch + 1):
 		train_bar = tqdm(train_loader)
 		
 		netG.train()
 		netD.train()
 		
-		image_loss_cache = 0.0
-		perception_loss_cache = 0.0
-		adversarial_loss_cache = 0.0
-		g_loss_cache = 0.0
-		
-		d_loss_t_cache = 0.0
-		d_loss_f_cache = 0.0
-		d_loss_cache = 0.0
+		cache = {'image_loss': 0, 'perception_loss': 0, 'adversarial_loss': 0, 'g_loss': 0, 'd_loss_t': 0, 'd_loss_f': 0, 'd_loss': 0, 'ssim': 0, 'psnr': 0}
 		
 		for data, target in train_bar:
 			real_img_hr = Variable(target)
@@ -147,9 +143,9 @@ def main():
 			d_loss_f = bce(logits_fake, torch.zeros_like(logits_fake))
 			d_loss = d_loss_t + d_loss_f
 			
-			d_loss_t_cache += d_loss_t
-			d_loss_f_cache += d_loss_f
-			d_loss_cache += d_loss
+			cache['d_loss_t'] += d_loss_t
+			cache['d_loss_f'] += d_loss_f
+			cache['d_loss'] += d_loss
 			
 			d_loss.backward(retain_graph=True)
 			optimizerD.step()
@@ -162,10 +158,10 @@ def main():
 			adversarial_loss = bce(logits_fake, torch.ones_like(logits_fake))
 			g_loss = image_loss + 2e-6*perception_loss + 1e-3*adversarial_loss
 
-			image_loss_cache += image_loss
-			perception_loss_cache += perception_loss
-			adversarial_loss_cache += adversarial_loss
-			g_loss_cache += g_loss
+			cache['image_loss'] += image_loss
+			cache['perception_loss'] += perception_loss
+			cache['adversarial_loss'] += adversarial_loss
+			cache['g_loss'] += g_loss
 
 			g_loss.backward()
 			optimizerG.step()
@@ -173,14 +169,15 @@ def main():
 			# Print information by tqdm
 			train_bar.set_description(desc='[%d/%d] Loss_D: %.4f = %.4f + %.4f Loss_G: %.4f = %.4f + %.4f + %.4f' % (epoch, n_epoch, d_loss, d_loss_t, d_loss_f, g_loss, image_loss, perception_loss, adversarial_loss))
 		
-		log_value('d_loss_t', d_loss_t_cache/len(train_loader), epoch)
-		log_value('d_loss_f', d_loss_f_cache/len(train_loader), epoch)
-		log_value('d_loss', d_loss_cache/len(train_loader), epoch)
+		if use_tensorboard:
+			log_value('d_loss_t', cache['d_loss_t']/len(train_loader), epoch)
+			log_value('d_loss_f', cache['d_loss_f']/len(train_loader), epoch)
+			log_value('d_loss', cache['d_loss']/len(train_loader), epoch)
 		
-		log_value('image_loss', image_loss_cache/len(train_loader), epoch)
-		log_value('perception_loss', perception_loss_cache/len(train_loader), epoch)
-		log_value('adversarial_loss', adversarial_loss_cache/len(train_loader), epoch)
-		log_value('g_loss', g_loss_cache/len(train_loader), epoch)
+			log_value('image_loss', cache['image_loss']/len(train_loader), epoch)
+			log_value('perception_loss', cache['perception_loss']/len(train_loader), epoch)
+			log_value('adversarial_loss', cache['adversarial_loss']/len(train_loader), epoch)
+			log_value('g_loss', cache['g_loss']/len(train_loader), epoch)
 		
 		if epoch == n_epoch or epoch%5 == 0:
 			# Visualize results
@@ -213,6 +210,9 @@ def main():
 					dev_bar.set_description(
 						desc='[converting LR images to SR images] PSNR: %.4f dB SSIM: %.4f' % (
 							valing_results['psnr'], valing_results['ssim']))
+					
+					cache['ssim'] += valing_results['ssim']
+					cache['psnr'] += valing_results['psnr']
 
 					dev_images.extend(
 						[display_transform()(val_hr_restore.squeeze(0)), display_transform()(hr.data.cpu().squeeze(0)),
@@ -227,6 +227,10 @@ def main():
 					image = utils.make_grid(image, nrow=3, padding=5)
 					utils.save_image(image, out_path + 'epoch_%d_index_%d.png' % (epoch, index), padding=5)
 					index += 1
+			
+			if use_tensorboard:			
+				log_value('ssim', cache['ssim']/len(dev_loader), epoch)
+				log_value('psnr', cache['psnr']/len(dev_loader), epoch)			
 					
 			# Save model parameters	
 			if torch.cuda.is_available():
@@ -238,6 +242,8 @@ def main():
 	
 	train_done_time = time.process_time()	
 	train_time = train_done_time - pretrain_done_time
+
+	print ('pretrain time : %d s, train time : %d s' % (pretrain_time, train_time))
 			
 if __name__ == '__main__':
 	main()
