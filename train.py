@@ -24,7 +24,7 @@ from preprocess import TrainDataset, DevDataset, display_transform
 from model import Generator, Discriminator
 
 def main():
-	n_epoch_pretrain = 100
+	n_epoch_pretrain = 20
 	use_tensorboard = True
 
 	parser = argparse.ArgumentParser(description='SRGAN Train')
