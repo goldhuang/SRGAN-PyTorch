@@ -78,8 +78,8 @@ def main():
 			netG.load_state_dict(torch.load('epochs/netG_epoch_' + str(check_point) + '_cpu.pth'))
 			netD.load_state_dict(torch.load('epochs/netD_epoch_' + str(check_point) + '_cpu.pth'))
 			
-	optimizerG = optim.Adam(netG.parameters())
-	optimizerD = optim.Adam(netD.parameters())
+	optimizerG = optim.Adam(netG.parameters(), lr=1e-4)
+	optimizerD = optim.Adam(netD.parameters(), lr=1e-4)
 	
 	if use_tensorboard:
 		configure("tensorboard/srgan-" + str(n_epoch_pretrain) + '-' + str(n_epoch), flush_secs=5)
