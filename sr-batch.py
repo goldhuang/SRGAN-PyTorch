@@ -15,6 +15,7 @@ parser.add_argument('--lr', type=str, help='test image path')
 parser.add_argument('--start', default=1, type=int, help='model start')
 parser.add_argument('--end', default=100, type=int, help='model end')
 parser.add_argument('--interval', default=1, type=int, help='model end')
+parser.add_argument('--output', default='batch', type=str, help='sub folder')
 opt = parser.parse_args()
 
 lr = opt.lr
@@ -40,4 +41,4 @@ with torch.no_grad():
 
 			out = model(image)
 			out_img = ToPILImage()(out[0].data.cpu())
-			out_img.save('generated/' + str(epoch) +basename(normpath(lr)))
+			out_img.save('generated/' + opt.output + '/' + str(epoch) +basename(normpath(lr)))
