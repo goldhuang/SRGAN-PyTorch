@@ -30,7 +30,7 @@ def main():
 
 	parser = argparse.ArgumentParser(description='SRGAN Train')
 	parser.add_argument('--crop_size', default=64, type=int, help='training images crop size')
-	parser.add_argument('--num_epochs', default=100, type=int, help='training epoch')
+	parser.add_argument('--num_epochs', default=200, type=int, help='training epoch')
 	parser.add_argument('--batch_size', default=64, type=int, help='training batch size')
 	parser.add_argument('--train_set', default='data/train', type=str, help='train set path')
 	parser.add_argument('--check_point', type=int, default=0, help="continue with previous check_point")
@@ -246,7 +246,7 @@ def main():
 						cache['psnr'] += valing_results['psnr']
 						
 						# Only save 1 images to avoid out of memory 
-						if len(dev_images) < 36 :
+						if len(dev_images) < 9 :
 							dev_images.extend([display_transform()(val_hr_restore.squeeze(0)), display_transform()(hr.data.cpu().squeeze(0)), display_transform()(sr.data.cpu().squeeze(0))])
 					
 					dev_images = torch.stack(dev_images)
