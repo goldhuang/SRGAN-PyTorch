@@ -8,6 +8,7 @@ from tensorboard_logger import configure, log_value
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torch.optim.lr_scheduler import MultiStepLR
 from torch.autograd import Variable
 
 import torch.utils.data
@@ -24,7 +25,7 @@ from preprocess import TrainDataset, DevDataset, display_transform
 from model import Generator, Discriminator
 
 def main():
-	n_epoch_pretrain = 20
+	n_epoch_pretrain = 100
 	use_tensorboard = True
 
 	parser = argparse.ArgumentParser(description='SRGAN Train')
@@ -77,9 +78,6 @@ def main():
 		else :
 			netG.load_state_dict(torch.load('epochs/netG_epoch_' + str(check_point) + '_cpu.pth'))
 			netD.load_state_dict(torch.load('epochs/netD_epoch_' + str(check_point) + '_cpu.pth'))
-			
-	optimizerG = optim.Adam(netG.parameters(), lr=1e-4)
-	optimizerD = optim.Adam(netD.parameters(), lr=1e-4)
 	
 	if use_tensorboard:
 		configure("tensorboard/srgan-" + str(n_epoch_pretrain) + '-' + str(n_epoch), flush_secs=5)
@@ -88,7 +86,10 @@ def main():
 	
 	# Pre-train generator using only MSE loss
 	if check_point == 0:
+		optimizerG = optim.Adam(netG.parameters())
+		schedulerG = MultiStepLR(optimizerG, milestones=[20], gamma=0.1)
 		for epoch in range(1, n_epoch_pretrain + 1):
+			schedulerG.step()		
 			train_bar = tqdm(train_loader)
 			
 			netG.train()
@@ -132,7 +133,10 @@ def main():
 		
 	pretrain_done_time = time.process_time()	
 	pretrain_time = pretrain_done_time - start_time
-		
+	
+	optimizerG = optim.Adam(netG.parameters(), lr=0.0001)
+	optimizerD = optim.Adam(netD.parameters(), lr=0.0001)
+	
 	for epoch in range(1 + check_point, n_epoch + 1 + check_point):
 		train_bar = tqdm(train_loader)
 		
@@ -197,7 +201,7 @@ def main():
 			log_value('adversarial_loss', cache['adversarial_loss']/len(train_loader), epoch)
 			log_value('g_loss', cache['g_loss']/len(train_loader), epoch)
 		
-		if epoch == n_epoch or epoch%5 == 0:
+		if True:
 			# Save model parameters	
 			if torch.cuda.is_available():
 				torch.save(netG.state_dict(), 'epochs/netG_epoch_%d_gpu.pth' % (epoch))
