@@ -11,14 +11,16 @@ from torchvision.transforms import ToTensor, ToPILImage
 from model import Generator
 
 parser = argparse.ArgumentParser(description='SR single image')
-parser.add_argument('--lr_image', type=str, help='test image path')
-parser.add_argument('--model_start', default=80, type=int, help='model start')
-parser.add_argument('--model_end', default=300, type=int, help='model end')
+parser.add_argument('--lr', type=str, help='test image path')
+parser.add_argument('--start', default=1, type=int, help='model start')
+parser.add_argument('--end', default=100, type=int, help='model end')
+parser.add_argument('--interval', default=1, type=int, help='model end')
 opt = parser.parse_args()
 
-lr = opt.lr_image
-start = opt.model_start
-end = opt.model_end
+lr = opt.lr
+start = opt.start
+end = opt.end
+interval = opt.interval
 
 with torch.no_grad():
 	model = Generator().eval()
@@ -26,7 +28,7 @@ with torch.no_grad():
 		model.cuda()
 	
 	for epoch in range(start, end+1):
-		if epoch%5 == 0:
+		if epoch%interval == 0:
 			model.load_state_dict(torch.load('epochs/netG_epoch_'+ str(epoch) +'_gpu.pth'))
 
 			image = Image.open(lr)
