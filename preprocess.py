@@ -19,7 +19,7 @@ def calculate_valid_crop_size(crop_size, upscale_factor):
 
 def hr_preprocess(crop_size):
     return Compose([
-    	#CenterCrop(384),
+    	CenterCrop(384),
         RandomCrop(crop_size),
         ToTensor(),
     ])
@@ -47,6 +47,7 @@ class DevDataset(Dataset):
 
     def __getitem__(self, index):
         hr_image = Image.open(self.image_filenames[index])
+		
         crop_size = calculate_valid_crop_size(128, self.upscale_factor)
         lr_scale = Resize(crop_size // self.upscale_factor, interpolation=Image.BICUBIC)
         hr_scale = Resize(crop_size, interpolation=Image.BICUBIC)
@@ -73,3 +74,12 @@ class TrainDataset(Dataset):
 
     def __len__(self):
         return len(self.image_filenames)
+		
+#val_loader = torch.utils.data.DataLoader(
+#    datasets.ImageFolder(valdir, transforms.Compose([
+#        transforms.TenCrop(224),
+#        transforms.Lambda(lambda crops: torch.stack([transforms.ToTensor()(crop) for crop in crops])),
+#        transforms.Lambda(lambda crops: torch.stack([normalize(crop) for crop in crops])),
+#    ])),
+#    batch_size=args.batch_size, shuffle=False,
+#    num_workers=args.workers, pin_memory=True)
