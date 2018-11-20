@@ -1,8 +1,7 @@
-data/train/*
+generated/*
+log/*
 *.pyc
 *.pth
-generated/*
 *.png
 *.DS_Store
-tensorboard/*
 *.jpg
