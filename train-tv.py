@@ -236,7 +236,7 @@ def main():
 						cache['psnr'] += valing_results['psnr']
 						
 						# Only save 1 images to avoid out of memory 
-						if len(dev_images) < 324 :
+						if len(dev_images) < 216 :
 							dev_images.extend([display_transform()(val_hr_restore.squeeze(0)), display_transform()(hr.data.cpu().squeeze(0)), display_transform()(sr.data.cpu().squeeze(0))])
 					
 					dev_images = torch.stack(dev_images)
