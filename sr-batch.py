@@ -31,7 +31,7 @@ with torch.no_grad():
 	
 	for epoch in range(start, end+1):
 		if epoch%interval == 0:
-			model.load_state_dict(torch.load('epochs/netG_epoch_'+ str(epoch) +'_gpu.pth'))
+			model.load_state_dict(torch.load('cp/netG_epoch_'+ str(epoch) +'_gpu.pth'))
 
 			image = Image.open(lr)
 

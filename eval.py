@@ -37,20 +37,21 @@ def main():
 	dev_set = DevDataset(dev_path, upscale_factor=4)
 	dev_loader = DataLoader(dataset=dev_set, num_workers=1, batch_size=1, shuffle=False)
 	
-	configure("tensorboard/srgan-val", flush_secs=5)
+	now = time.gmtime(time.time())
+	configure(str(now.tm_mon) + '-' + str(now.tm_mday) + '-' + str(now.tm_hour) + '-' + str(now.tm_min), flush_secs=5)
         
 	netG = Generator()
 
 	if torch.cuda.is_available():
 		netG.cuda()
 	
-	out_path = 'visualizaton/'
+	out_path = 'vis/'
 	if not os.path.exists(out_path):
 		os.makedirs(out_path)
 				
 	for epoch in range(start, end+1):
 		if epoch%interval == 0:
-			netG.load_state_dict(torch.load('epochs/netG_epoch_'+ str(epoch) +'_gpu.pth'))
+			netG.load_state_dict(torch.load('cp/netG_epoch_'+ str(epoch) +'_gpu.pth'))
 		
 			with torch.no_grad():
 				netG.eval()

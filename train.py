@@ -25,7 +25,7 @@ from preprocess import TrainDataset, DevDataset, display_transform
 from model import Generator, Discriminator
 
 def main():
-	n_epoch_pretrain = 100
+	n_epoch_pretrain = 20
 	use_tensorboard = True
 
 	parser = argparse.ArgumentParser(description='SRGAN Train')
@@ -87,9 +87,9 @@ def main():
 	# Pre-train generator using only MSE loss
 	if check_point == 0:
 		optimizerG = optim.Adam(netG.parameters())
-		schedulerG = MultiStepLR(optimizerG, milestones=[20], gamma=0.1)
+		#schedulerG = MultiStepLR(optimizerG, milestones=[20], gamma=0.1)
 		for epoch in range(1, n_epoch_pretrain + 1):
-			schedulerG.step()		
+			#schedulerG.step()		
 			train_bar = tqdm(train_loader)
 			
 			netG.train()
@@ -134,8 +134,8 @@ def main():
 	pretrain_done_time = time.process_time()	
 	pretrain_time = pretrain_done_time - start_time
 	
-	optimizerG = optim.Adam(netG.parameters(), lr=0.0001)
-	optimizerD = optim.Adam(netD.parameters(), lr=0.0001)
+	optimizerG = optim.Adam(netG.parameters())
+	optimizerD = optim.Adam(netD.parameters())
 	
 	for epoch in range(1 + check_point, n_epoch + 1 + check_point):
 		train_bar = tqdm(train_loader)
