@@ -1,3 +1,5 @@
+# https://github.com/leftthomas/SRGAN/blob/master/data_utils.py
+
 import os
 from os import listdir
 from os.path import join
