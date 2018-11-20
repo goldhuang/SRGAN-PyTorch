@@ -1,5 +1,6 @@
 import argparse
 import time
+import os
 
 from os.path import basename, normpath
 
@@ -41,4 +42,7 @@ with torch.no_grad():
 
 			out = model(image)
 			out_img = ToPILImage()(out[0].data.cpu())
-			out_img.save('generated/' + opt.output + '/' + str(epoch) +basename(normpath(lr)))
+			out_path = 'generated/' + opt.output + '/'
+			if not os.path.exists(out_path):
+				os.makedirs(out_path)
+			out_img.save(out_path + str(epoch) +basename(normpath(lr)))
