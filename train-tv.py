@@ -29,10 +29,10 @@ def main():
 
 	parser = argparse.ArgumentParser(description='SRGAN Train')
 	parser.add_argument('--crop_size', default=64, type=int, help='training images crop size')
-	parser.add_argument('--num_epochs', default=50, type=int, help='training epoch')
+	parser.add_argument('--num_epochs', default=100, type=int, help='training epoch')
 	parser.add_argument('--batch_size', default=64, type=int, help='training batch size')
 	parser.add_argument('--train_set', default='data/train', type=str, help='train set path')
-	parser.add_argument('--check_point', type=int, default=0, help="continue with previous check_point")
+	parser.add_argument('--check_point', type=int, default=-1, help="continue with previous check_point")
 
 	opt = parser.parse_args()
 
@@ -69,14 +69,6 @@ def main():
 		tv.cuda()
 		mse.cuda()
 		bce.cuda()
-		
-	if check_point != 0:
-		if torch.cuda.is_available():
-			netG.load_state_dict(torch.load('cp/netG_epoch_' + str(check_point) + '_gpu.pth'))
-			netD.load_state_dict(torch.load('cp/netD_epoch_' + str(check_point) + '_gpu.pth'))
-		else :
-			netG.load_state_dict(torch.load('cp/netG_epoch_' + str(check_point) + '_cpu.pth'))
-			netD.load_state_dict(torch.load('cp/netD_epoch_' + str(check_point) + '_cpu.pth'))
 	
 	if use_tensorboard:
 		configure('log', flush_secs=5)
@@ -84,7 +76,7 @@ def main():
 	start_time = time.process_time()
 	
 	# Pre-train generator using only MSE loss
-	if check_point == 0:
+	if check_point == -1:
 		optimizerG = optim.Adam(netG.parameters())
 		#schedulerG = MultiStepLR(optimizerG, milestones=[20], gamma=0.1)
 		for epoch in range(1, n_epoch_pretrain + 1):
@@ -131,6 +123,18 @@ def main():
 	
 	optimizerG = optim.Adam(netG.parameters())
 	optimizerD = optim.Adam(netD.parameters())
+	
+	if check_point != -1:
+		if torch.cuda.is_available():
+			netG.load_state_dict(torch.load('cp/netG_epoch_' + str(check_point) + '_gpu.pth'))
+			netD.load_state_dict(torch.load('cp/netD_epoch_' + str(check_point) + '_gpu.pth'))
+			optimizerG.load_state_dict(torch.load('cp/optimizerG_epoch_' + str(check_point) + '_gpu.pth'))
+			optimizerD.load_state_dict(torch.load('cp/optimizerD_epoch_' + str(check_point) + '_gpu.pth'))
+		else :
+			netG.load_state_dict(torch.load('cp/netG_epoch_' + str(check_point) + '_cpu.pth'))
+			netD.load_state_dict(torch.load('cp/netD_epoch_' + str(check_point) + '_cpu.pth'))
+			optimizerG.load_state_dict(torch.load('cp/optimizerG_epoch_' + str(check_point) + '_cpu.pth'))
+			optimizerD.load_state_dict(torch.load('cp/optimizerD_epoch_' + str(check_point) + '_cpu.pth'))
 	
 	for epoch in range(1 + check_point, n_epoch + 1 + check_point):
 		train_bar = tqdm(train_loader)
@@ -196,9 +200,13 @@ def main():
 			if torch.cuda.is_available():
 				torch.save(netG.state_dict(), 'cp/netG_epoch_%d_gpu.pth' % (epoch))
 				torch.save(netD.state_dict(), 'cp/netD_epoch_%d_gpu.pth' % (epoch))
+				torch.save(optimizerG.state_dict(), 'cp/optimizerG_epoch_%d_gpu.pth' % (epoch))
+				torch.save(optimizerD.state_dict(), 'cp/optimizerD_epoch_%d_gpu.pth' % (epoch))
 			else:
 				torch.save(netG.state_dict(), 'cp/netG_epoch_%d_cpu.pth' % (epoch))
 				torch.save(netD.state_dict(), 'cp/netD_epoch_%d_cpu.pth' % (epoch))
+				torch.save(optimizerG.state_dict(), 'cp/optimizerG_epoch_%d_cpu.pth' % (epoch))
+				torch.save(optimizerD.state_dict(), 'cp/optimizerD_epoch_%d_cpu.pth' % (epoch))
 				
 			# Visualize results
 			if True:
