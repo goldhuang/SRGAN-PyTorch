@@ -1,5 +1,6 @@
 generated/*
 log/*
+RES/*
 *.pyc
 *.pth
 *.png
