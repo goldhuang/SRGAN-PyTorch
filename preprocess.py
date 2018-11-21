@@ -1,5 +1,3 @@
-# https://github.com/leftthomas/SRGAN/blob/master/data_utils.py
-
 import os
 from os import listdir
 from os.path import join
@@ -33,11 +31,9 @@ def lr_preprocess(crop_size, upscale_factor):
         ToTensor()
     ])
 
-def display_transform():
+def to_image():
     return Compose([
         ToPILImage(),
-        Resize(400),
-        CenterCrop(400),
         ToTensor()
     ])
 	

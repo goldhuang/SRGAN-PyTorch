@@ -20,7 +20,7 @@ from math import log10
 import pandas as pd
 import pytorch_ssim
 
-from preprocess import TrainDataset, DevDataset, display_transform
+from preprocess import TrainDataset, DevDataset, to_image
 from model import Generator, Discriminator, TVLoss
 
 def main():
@@ -245,7 +245,7 @@ def main():
 						
 						# Only save 1 images to avoid out of memory 
 						if len(dev_images) < 120 :
-							dev_images.extend([display_transform()(val_hr_restore.squeeze(0)), display_transform()(hr.data.cpu().squeeze(0)), display_transform()(sr.data.cpu().squeeze(0))])
+							dev_images.extend([to_image()(val_hr_restore.squeeze(0)), to_image()(hr.data.cpu().squeeze(0)), to_image()(sr.data.cpu().squeeze(0))])
 					
 					dev_images = torch.stack(dev_images)
 					dev_images = torch.chunk(dev_images, dev_images.size(0) // 6)
