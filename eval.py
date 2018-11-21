@@ -1,5 +1,6 @@
 import os
 import argparse
+import time
 
 from tqdm import tqdm
 from tensorboard_logger import configure, log_value
@@ -84,11 +85,11 @@ def main():
 					cache['psnr'] += valing_results['psnr']
 
 					# Only save 1 images to avoid out of memory
-					if len(dev_images) < 360 :
+					if len(dev_images) < 120 :
 						dev_images.extend([display_transform()(val_hr_restore.squeeze(0)), display_transform()(hr.data.cpu().squeeze(0)), display_transform()(sr.data.cpu().squeeze(0))])
 
 				dev_images = torch.stack(dev_images)
-				dev_images = torch.chunk(dev_images, dev_images.size(0) // 9)
+				dev_images = torch.chunk(dev_images, dev_images.size(0) // 6)
 
 				dev_save_bar = tqdm(dev_images, desc='[saving training results]')
 				index = 1

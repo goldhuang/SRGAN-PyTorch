@@ -24,7 +24,7 @@ from preprocess import TrainDataset, DevDataset, display_transform
 from model import Generator, Discriminator, TVLoss
 
 def main():
-	n_epoch_pretrain = 10
+	n_epoch_pretrain = 5
 	use_tensorboard = True
 
 	parser = argparse.ArgumentParser(description='SRGAN Train')
@@ -136,7 +136,7 @@ def main():
 			optimizerG.load_state_dict(torch.load('cp/optimizerG_epoch_' + str(check_point) + '_cpu.pth'))
 			optimizerD.load_state_dict(torch.load('cp/optimizerD_epoch_' + str(check_point) + '_cpu.pth'))
 	
-	for epoch in range(1 + check_point, n_epoch + 1 + check_point):
+	for epoch in range(1 + max(check_point, 0), n_epoch + 1 + max(check_point, 0)):
 		train_bar = tqdm(train_loader)
 		
 		netG.train()
@@ -244,11 +244,11 @@ def main():
 						cache['psnr'] += valing_results['psnr']
 						
 						# Only save 1 images to avoid out of memory 
-						if len(dev_images) < 216 :
+						if len(dev_images) < 120 :
 							dev_images.extend([display_transform()(val_hr_restore.squeeze(0)), display_transform()(hr.data.cpu().squeeze(0)), display_transform()(sr.data.cpu().squeeze(0))])
 					
 					dev_images = torch.stack(dev_images)
-					dev_images = torch.chunk(dev_images, dev_images.size(0) // 9)
+					dev_images = torch.chunk(dev_images, dev_images.size(0) // 6)
 					
 					dev_save_bar = tqdm(dev_images, desc='[saving training results]')
 					index = 1
