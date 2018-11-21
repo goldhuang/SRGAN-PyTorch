@@ -53,7 +53,7 @@ class Generator(nn.Module):
 
     def forward(self, x):
         y = self.conv1(x)
-        cache = y
+        cache = y.clone()
         
         for i in range(self.n_residual):
             y = self.__getattr__('residual' + str(i+1))(y)
