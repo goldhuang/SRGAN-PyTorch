@@ -57,19 +57,19 @@ class TrainDataset(Dataset):
 
 def hr_preprocess_test(crop_size):
     return Compose([
-    	Resize(crop_size, interpolation=Image.BICUBIC)
+    	Resize(crop_size, interpolation=Image.BICUBIC),
         ToTensor(),
         Normalize(mean = [0.5, 0.5, 0.5], std = [0.5, 0.5, 0.5])
     ])
 
 def lr_preprocess_test(crop_size, upscale_factor):
     return Compose([
-        Resize(crop_size // self.upscale_factor, interpolation=Image.BICUBIC)
+        Resize(crop_size // self.upscale_factor, interpolation=Image.BICUBIC),
         ToTensor(),
         Normalize(mean = [0.5, 0.5, 0.5], std = [0.5, 0.5, 0.5])
     ])
         
-class TestDataset(Dataset):
+class DevDataset(Dataset):
     def __init__(self, dataset_dir, upscale_factor):
         super(DevDataset, self).__init__()
         self.upscale_factor = upscale_factor
