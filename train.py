@@ -53,7 +53,6 @@ def main():
 	dev_loader = DataLoader(dataset=dev_set, num_workers=1, batch_size=1, shuffle=False)
 
 	mse = nn.MSELoss()
-	bce = nn.BCEWithLogitsLoss()
 	bce = nn.BCELoss()
 	tv = TVLoss()
 		
