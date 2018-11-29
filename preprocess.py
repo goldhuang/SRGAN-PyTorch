@@ -22,12 +22,6 @@ def to_image():
         ToPILImage(),
         ToTensor()
     ])
-    
-def hr_preprocess_train(crop_size):
-    return 
-
-def lr_preprocess_train(crop_size, upscale_factor):
-    return 
 	
 class TrainDataset(Dataset):
     def __init__(self, dataset_dir, crop_size, upscale_factor):

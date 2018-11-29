@@ -53,7 +53,7 @@ def main():
 	dev_loader = DataLoader(dataset=dev_set, num_workers=1, batch_size=1, shuffle=False)
 
 	mse = nn.MSELoss()
-	bce = nn.BCELossWithLogits()
+	bce = nn.BCEWithLogitsLoss()
 	tv = TVLoss()
 		
 	if not torch.cuda.is_available():
@@ -97,9 +97,6 @@ def main():
 				if torch.cuda.is_available():
 					lowres = lowres.cuda()
 				fake_img_hr = netG(lowres)
-				
-				logits_real = netD(real_img_hr)
-				logits_fake = netD(fake_img_hr)
 
 				# Train G
 				netG.zero_grad()
