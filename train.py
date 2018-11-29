@@ -160,7 +160,13 @@ def main():
 			# Train D
 			netD.zero_grad()
 			
-			d_loss = bce(logits_real, torch.ones_like(logits_real)) + bce(logits_fake, torch.zeros_like(logits_fake))
+			real = Variable(torch.rand(logits_real.size())*0.5 + 0.7)
+            fake = Variable(torch.rand(logits_fake.size())*0.3)
+            if torch.cuda.is_available():
+            	real.cuda()
+            	fake.cuda()
+            
+			d_loss = bce(logits_real, real) + bce(logits_fake, fake)
 			
 			cache['d_loss'] += d_loss.item()
 			
