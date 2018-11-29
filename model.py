@@ -61,7 +61,7 @@ class Generator(nn.Module):
         y = self.conv2(y)
         y = self.upsample(y + cache)
 
-        return (torch.tanh(y) + 1) / 2 #(0, 1)
+        return torch.tanh(y)
     
 class Discriminator(nn.Module):
 	def __init__(self, l=0.2):

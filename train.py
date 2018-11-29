@@ -216,6 +216,7 @@ def main():
 				
 			# Visualize results
 			if True:
+				unnorm = transforms.Normalize(mean=[-1, -1, -1], std=[2, 2, 2])
 				with torch.no_grad():
 					netG.eval()
 					out_path = 'vis/'
@@ -236,6 +237,10 @@ def main():
 							hr = hr.cuda()
 						sr = netG(lr)
 
+						lr = unnorm(lr)
+						hr = unnorm(hr)
+						sr = unnorm(sr)
+						
 						batch_mse = ((sr - hr) ** 2).data.mean().item()
 						valing_results['mse'] += batch_mse * batch_size
 						batch_ssim = pytorch_ssim.ssim(sr, hr).item()
@@ -251,7 +256,8 @@ def main():
 						
 						# Only save 1 images to avoid out of memory 
 						if len(dev_images) < 120 :
-							dev_images.extend([to_image()(val_hr_restore.squeeze(0)), to_image()(hr.data.cpu().squeeze(0)), to_image()(sr.data.cpu().squeeze(0))])
+							bic = unnorm(val_hr_restore)
+							dev_images.extend([to_image()(bic.squeeze(0)), to_image()(hr.data.cpu().squeeze(0)), to_image()(sr.data.cpu().squeeze(0))])
 					
 					dev_images = torch.stack(dev_images)
 					dev_images = torch.chunk(dev_images, dev_images.size(0) // 6)
