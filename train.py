@@ -54,6 +54,7 @@ def main():
 
 	mse = nn.MSELoss()
 	bce = nn.BCEWithLogitsLoss()
+	bce = nn.BCELoss()
 	tv = TVLoss()
 		
 	if not torch.cuda.is_available():
@@ -216,6 +217,7 @@ def main():
 				
 			# Visualize results
 			if True:
+				norm = Normalize(mean = [0.5, 0.5, 0.5], std = [0.5, 0.5, 0.5])
 				unnorm = Normalize(mean=[-1, -1, -1], std=[2, 2, 2])
 				with torch.no_grad():
 					netG.eval()
@@ -229,17 +231,20 @@ def main():
 					for val_lr, val_hr_restore, val_hr in dev_bar:
 						batch_size = val_lr.size(0)
 						valing_results['batch_sizes'] += batch_size
-						
+						print (val_lr.ndimension())
 						lr = Variable(val_lr)
 						hr = Variable(val_hr)
 						if torch.cuda.is_available():
 							lr = lr.cuda()
 							hr = hr.cuda()
+						
+						for i in range(batch_size):
+							lr[i] = norm(lr[i])
+						
 						sr = netG(lr)
-
-						lr = unnorm(lr)
-						hr = unnorm(hr)
-						sr = unnorm(sr)
+						
+						for i in range(batch_size):
+							sr[i] = unnorm(sr[i])
 						
 						batch_mse = ((sr - hr) ** 2).data.mean().item()
 						valing_results['mse'] += batch_mse * batch_size
@@ -256,8 +261,7 @@ def main():
 						
 						# Only save 1 images to avoid out of memory 
 						if len(dev_images) < 120 :
-							bic = unnorm(val_hr_restore)
-							dev_images.extend([to_image()(bic.squeeze(0)), to_image()(hr.data.cpu().squeeze(0)), to_image()(sr.data.cpu().squeeze(0))])
+							dev_images.extend([to_image()(val_hr_restore.squeeze(0)), to_image()(hr.data.cpu().squeeze(0)), to_image()(sr.data.cpu().squeeze(0))])
 					
 					dev_images = torch.stack(dev_images)
 					dev_images = torch.chunk(dev_images, dev_images.size(0) // 6)
