@@ -15,6 +15,7 @@ import torch.utils.data
 from torch.utils.data import DataLoader
 
 import torchvision.utils as utils
+from torchvision.transforms import Normalize
 
 from math import log10
 import pandas as pd
@@ -52,7 +53,7 @@ def main():
 	dev_loader = DataLoader(dataset=dev_set, num_workers=1, batch_size=1, shuffle=False)
 
 	mse = nn.MSELoss()
-	bce = nn.BCELoss()
+	bce = nn.BCEWithLogitsLoss()
 	tv = TVLoss()
 		
 	if not torch.cuda.is_available():
@@ -215,7 +216,7 @@ def main():
 				
 			# Visualize results
 			if True:
-				unnorm = transforms.Normalize(mean=[-1, -1, -1], std=[2, 2, 2])
+				unnorm = Normalize(mean=[-1, -1, -1], std=[2, 2, 2])
 				with torch.no_grad():
 					netG.eval()
 					out_path = 'vis/'
