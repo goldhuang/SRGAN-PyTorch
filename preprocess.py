@@ -28,8 +28,8 @@ class TrainDataset(Dataset):
         super(TrainDataset, self).__init__()
         self.image_filenames = [join(dataset_dir, x) for x in listdir(dataset_dir) if is_image_file(x)]
         crop_size = calculate_valid_crop_size(crop_size, upscale_factor)
-        self.hr_preprocess = Compose([CenterCrop(384), RandomCrop(crop_size), ToTensor(), Normalize(mean = [0.5, 0.5, 0.5], std = [0.5, 0.5, 0.5])])
-        self.lr_preprocess = Compose([ToPILImage(), Resize(crop_size // upscale_factor, interpolation=Image.BICUBIC), ToTensor(), Normalize(mean = [0.5, 0.5, 0.5], std = [0.5, 0.5, 0.5])])
+        self.hr_preprocess = Compose([CenterCrop(384), RandomCrop(crop_size), ToTensor()])
+        self.lr_preprocess = Compose([ToPILImage(), Resize(crop_size // upscale_factor, interpolation=Image.BICUBIC), ToTensor()])
 
     def __getitem__(self, index):
         hr_image = self.hr_preprocess(Image.open(self.image_filenames[index]))

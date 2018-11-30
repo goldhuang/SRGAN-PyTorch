@@ -213,8 +213,6 @@ def main():
 				
 			# Visualize results
 			if True:
-				norm = Normalize(mean = [0.5, 0.5, 0.5], std = [0.5, 0.5, 0.5])
-				unnorm = Normalize(mean=[-1, -1, -1], std=[2, 2, 2])
 				with torch.no_grad():
 					netG.eval()
 					out_path = 'vis/'
@@ -234,13 +232,7 @@ def main():
 							lr = lr.cuda()
 							hr = hr.cuda()
 						
-						for i in range(batch_size):
-							lr[i] = norm(lr[i])
-						
 						sr = netG(lr)
-						
-						for i in range(batch_size):
-							sr[i] = unnorm(sr[i])
 						
 						batch_mse = ((sr - hr) ** 2).data.mean().item()
 						valing_results['mse'] += batch_mse * batch_size
