@@ -25,7 +25,7 @@ from preprocess import TrainDataset, DevDataset, to_image
 from model import Generator, Discriminator, TVLoss
 
 def main():
-	n_epoch_pretrain = 5
+	n_epoch_pretrain = 2
 	use_tensorboard = True
 
 	parser = argparse.ArgumentParser(description='SRGAN Train')
@@ -201,14 +201,8 @@ def main():
 		# Save model parameters	
 		if torch.cuda.is_available():
 			torch.save(netG.state_dict(), 'cp/netG_epoch_%d_gpu.pth' % (epoch))
-			torch.save(netD.state_dict(), 'cp/netD_epoch_%d_gpu.pth' % (epoch))
-			torch.save(optimizerG.state_dict(), 'cp/optimizerG_epoch_%d_gpu.pth' % (epoch))
-			torch.save(optimizerD.state_dict(), 'cp/optimizerD_epoch_%d_gpu.pth' % (epoch))
 		else:
 			torch.save(netG.state_dict(), 'cp/netG_epoch_%d_cpu.pth' % (epoch))
-			torch.save(netD.state_dict(), 'cp/netD_epoch_%d_cpu.pth' % (epoch))
-			torch.save(optimizerG.state_dict(), 'cp/optimizerG_epoch_%d_cpu.pth' % (epoch))
-			torch.save(optimizerD.state_dict(), 'cp/optimizerD_epoch_%d_cpu.pth' % (epoch))
 			
 		# Visualize results
 		with torch.no_grad():
@@ -259,8 +253,18 @@ def main():
 		
 			if use_tensorboard:			
 				log_value('ssim', cache['ssim']/len(dev_loader), epoch)
-				log_value('psnr', cache['psnr']/len(dev_loader), epoch)			
-	
+				log_value('psnr', cache['psnr']/len(dev_loader), epoch)
+				
+		# Save model parameters	
+		if torch.cuda.is_available():
+			torch.save(netD.state_dict(), 'cp/netD_epoch_%d_gpu.pth' % (n_epoch))
+			torch.save(optimizerG.state_dict(), 'cp/optimizerG_epoch_%d_gpu.pth' % (n_epoch))
+			torch.save(optimizerD.state_dict(), 'cp/optimizerD_epoch_%d_gpu.pth' % (n_epoch))
+		else:
+			torch.save(netD.state_dict(), 'cp/netD_epoch_%d_cpu.pth' % (n_epoch))
+			torch.save(optimizerG.state_dict(), 'cp/optimizerG_epoch_%d_cpu.pth' % (n_epoch))
+			torch.save(optimizerD.state_dict(), 'cp/optimizerD_epoch_%d_cpu.pth' % (n_epoch))
+			
 	train_done_time = time.process_time()	
 	train_time = train_done_time - pretrain_done_time
 
