@@ -232,16 +232,13 @@ def main():
 				
 				sr = netG(lr)
 				
-				batch_mse = ((sr - hr) ** 2).data.mean().item()
-				valing_results['mse'] += batch_mse * batch_size
-				batch_ssim = pytorch_ssim.ssim(sr, hr).item()
-				valing_results['ssims'] += batch_ssim * batch_size
-				valing_results['psnr'] = 10 * log10(1 / (valing_results['mse'] / valing_results['batch_sizes']))
-				valing_results['ssim'] = valing_results['ssims'] / valing_results['batch_sizes']
-				dev_bar.set_description(desc='[converting LR images to SR images] PSNR: %.4f dB SSIM: %.4f' % (valing_results['psnr'], valing_results['ssim']))
+				mse = ((sr - hr) ** 2).mean().item()
+				psnr = 10 * log10(1 / mse)
+				ssim = pytorch_ssim.ssim(sr, hr).item()
+				dev_bar.set_description(desc='[converting LR images to SR images] PSNR: %.4f dB SSIM: %.4f' % (psnr, ssim))
 				
-				cache['ssim'] += valing_results['ssim']
-				cache['psnr'] += valing_results['psnr']
+				cache['ssim'] += ssim
+				cache['psnr'] += psnr
 				
 				# Only save 1 images to avoid out of memory 
 				if len(dev_images) < 60 :
