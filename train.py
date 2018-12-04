@@ -222,8 +222,6 @@ def main():
 			dev_images = []
 			for val_lr, val_hr_restore, val_hr in dev_bar:
 				batch_size = val_lr.size(0)
-				valing_results['batch_sizes'] += batch_size
-				print (val_lr.ndimension())
 				lr = Variable(val_lr)
 				hr = Variable(val_hr)
 				if torch.cuda.is_available():
