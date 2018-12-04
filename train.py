@@ -113,9 +113,6 @@ def main():
 				torch.save(netG.state_dict(), 'cp/netG_epoch_pre_gpu.pth')
 			else:
 				torch.save(netG.state_dict(), 'cp/netG_epoch_pre_cpu.pth')
-		
-	pretrain_done_time = time.process_time()	
-	pretrain_time = pretrain_done_time - start_time
 	
 	optimizerG = optim.Adam(netG.parameters())
 	optimizerD = optim.Adam(netD.parameters())
