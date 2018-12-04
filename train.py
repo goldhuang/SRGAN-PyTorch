@@ -25,7 +25,7 @@ from preprocess import TrainDataset, DevDataset, to_image
 from model import Generator, Discriminator, TVLoss
 
 def main():
-	n_epoch_pretrain = 2
+	n_epoch_pretrain = 5
 	use_tensorboard = True
 
 	parser = argparse.ArgumentParser(description='SRGAN Train')
@@ -143,6 +143,8 @@ def main():
 		cache = {'mse_loss': 0, 'tv_loss': 0, 'adv_loss': 0, 'g_loss': 0, 'd_loss': 0, 'ssim': 0, 'psnr': 0}
 		
 		for data, target in train_bar:
+			#print ('lr size : ' + str(data.size()))
+			#print ('hr size : ' + str(target.size()))
 			real_img_hr = Variable(target)
 			if torch.cuda.is_available():
 				real_img_hr = real_img_hr.cuda()
@@ -151,9 +153,13 @@ def main():
 			if torch.cuda.is_available():
 				lowres = lowres.cuda()
 			fake_img_hr = netG(lowres)
+			#print ('sr size : ' + str(fake_img_hr.size()))
 			
 			logits_real = netD(real_img_hr)
 			logits_fake = netD(fake_img_hr)
+			
+			#print ('logits real size : ' + str(logits_real.size()))
+			#print ('logits fake size : ' + str(logits_fake.size()))
 				
 			# Train D
 			netD.zero_grad()

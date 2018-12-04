@@ -52,6 +52,7 @@ class Generator(nn.Module):
         )
 
     def forward(self, x):
+        #print ('G input size :' + str(x.size()))
         y = self.conv1(x)
         cache = y.clone()
         
@@ -60,7 +61,7 @@ class Generator(nn.Module):
             
         y = self.conv2(y)
         y = self.upsample(y + cache)
-
+        #print ('G output size :' + str(y.size()))
         return (torch.tanh(y) + 1.0) / 2.0
     
 class Discriminator(nn.Module):
@@ -105,7 +106,12 @@ class Discriminator(nn.Module):
 		)
 
 	def forward(self, x): 
-		return torch.sigmoid(self.net(x))
+		#print ('D input size :' +  str(x.size()))
+		y = self.net(x)
+		#print ('D output size :' +  str(y.size()))
+		si = torch.sigmoid(y).view(y.size()[0])
+		#print ('D output : ' + str(si))
+		return si
 
 # https://github.com/leftthomas/SRGAN/blob/master/loss.py
 	
