@@ -232,8 +232,7 @@ def main():
 				
 				sr = netG(lr)
 				
-				mse = ((sr - hr) ** 2).mean().item()
-				psnr = 10 * log10(1 / mse)
+				psnr = 10 * log10(1 / ((sr - hr) ** 2).mean().item())
 				ssim = pytorch_ssim.ssim(sr, hr).item()
 				dev_bar.set_description(desc='[converting LR images to SR images] PSNR: %.4f dB SSIM: %.4f' % (psnr, ssim))
 				
