@@ -25,6 +25,12 @@ import pytorch_ssim
 from preprocess import TrainDataset, DevDataset, to_image
 from model import Generator, Discriminator, TVLoss
 
+def print_first_parameter(net):	
+	for name, param in net.named_parameters():
+		if param.requires_grad:
+			print (str(name) + ':' + str(param.data[0]))
+			return
+
 def check_grads(model, model_name):
 	grads = []
 	for p in model.parameters():
