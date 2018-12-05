@@ -177,8 +177,8 @@ def main():
 			if not check_grads(netD, 'D'):
 				return
 			netD.zero_grad()
-			real = Variable(torch.rand(logits_real.size())*0.5 + 0.7)
-			fake = Variable(torch.rand(logits_fake.size())*0.3)
+			real = Variable(torch.rand(logits_real.size())*0.25 + 0.85)
+			fake = Variable(torch.rand(logits_fake.size())*0.15)
 			if torch.cuda.is_available():
 				real = real.cuda()
 				fake = fake.cuda()
