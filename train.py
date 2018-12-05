@@ -167,7 +167,7 @@ def main():
 				lowres = lowres.cuda()
 			
 			real_img_hr = Variable(real_img_hr)
-			fake_img_hr = Variable(netG(lowres).data)
+			fake_img_hr = Variable(netG(lowres))
 			
 			# Train D
 			if not check_grads(netD, 'D'):
