@@ -1,6 +1,7 @@
 import os
 import argparse
 import time
+import numpy as np
 
 from tqdm import tqdm
 from tensorboard_logger import configure, log_value
@@ -23,6 +24,22 @@ import pytorch_ssim
 
 from preprocess import TrainDataset, DevDataset, to_image
 from model import Generator, Discriminator, TVLoss
+
+def check_grads(model, model_name):
+	grads = []
+	for p in model.parameters():
+		if not p.grad is None:
+			grads.append(float(p.grad.mean()))
+
+	grads = np.array(grads)
+	if grads.any() and grads.mean() > 100:
+		print('WARNING!' + model_name + ' gradients mean is over 100.')
+		return False
+	if grads.any() and grads.max() > 100:
+		print('WARNING!' + model_name + ' gradients max is over 100.')
+		return False
+		
+	return True
 
 def main():
 	n_epoch_pretrain = 5
@@ -157,6 +174,8 @@ def main():
 			#print ('logits fake size : ' + str(logits_fake.size()))
 				
 			# Train D
+			if not check_grads(netD, 'D'):
+				return
 			netD.zero_grad()
 			real = Variable(torch.rand(logits_real.size())*0.5 + 0.7)
 			fake = Variable(torch.rand(logits_fake.size())*0.3)
@@ -172,6 +191,8 @@ def main():
 			optimizerD.step()
 
 			# Train G
+			if not check_grads(netG, 'G'):
+				return
 			netG.zero_grad()
 			
 			image_loss = mse(fake_img_hr, real_img_hr)
