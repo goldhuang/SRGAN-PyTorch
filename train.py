@@ -170,6 +170,12 @@ def main():
 			lowres = Variable(data)
 			if torch.cuda.is_available():
 				lowres = lowres.cuda()
+				
+			# Train D
+			if not check_grads(netD, 'D'):
+				return
+			netD.zero_grad()
+				
 			fake_img_hr = netG(lowres)
 			#print ('sr size : ' + str(fake_img_hr.size()))
 			
@@ -178,11 +184,7 @@ def main():
 			
 			#print ('logits real size : ' + str(logits_real.size()))
 			#print ('logits fake size : ' + str(logits_fake.size()))
-				
-			# Train D
-			if not check_grads(netD, 'D'):
-				return
-			netD.zero_grad()
+			
 			real = Variable(torch.rand(logits_real.size())*0.25 + 0.85)
 			fake = Variable(torch.rand(logits_fake.size())*0.15)
 			if torch.cuda.is_available():
@@ -202,9 +204,12 @@ def main():
 			netG.zero_grad()
 			
 			image_loss = mse(fake_img_hr, real_img_hr)
-			#perception_loss = mse(netV(fake_img_hr), netV(real_img_hr))
+			
+			logits_fake = netD(fake_img_hr)
 			adversarial_loss = bce(logits_fake, torch.ones_like(logits_fake))
+			
 			tv_loss = tv(fake_img_hr)
+			
 			g_loss = image_loss + 1e-3*adversarial_loss + 2e-8*tv_loss
 
 			cache['mse_loss'] += image_loss.item()
