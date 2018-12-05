@@ -109,14 +109,13 @@ def main():
 			
 			cache = {'g_loss': 0}
 			
-			for data, target in train_bar:
-				real_img_hr = Variable(target)
+			for lowres, real_img_hr in train_bar:
 				if torch.cuda.is_available():
 					real_img_hr = real_img_hr.cuda()
 					
-				lowres = Variable(data)
 				if torch.cuda.is_available():
 					lowres = lowres.cuda()
+					
 				fake_img_hr = netG(lowres)
 
 				# Train G
@@ -148,9 +147,9 @@ def main():
 			optimizerD.load_state_dict(torch.load('cp/optimizerD_epoch_' + str(check_point) + '_gpu.pth'))
 		else :
 			netG.load_state_dict(torch.load('cp/netG_epoch_' + str(check_point) + '_cpu.pth'))
-			netD.load_state_dict(torch.load('cp/netD_epoch_' + str(check_point) + '_cpu.pth'))
-			optimizerG.load_state_dict(torch.load('cp/optimizerG_epoch_' + str(check_point) + '_cpu.pth'))
-			optimizerD.load_state_dict(torch.load('cp/optimizerD_epoch_' + str(check_point) + '_cpu.pth'))
+			#netD.load_state_dict(torch.load('cp/netD_epoch_' + str(check_point) + '_cpu.pth'))
+			#optimizerG.load_state_dict(torch.load('cp/optimizerG_epoch_' + str(check_point) + '_cpu.pth'))
+			#optimizerD.load_state_dict(torch.load('cp/optimizerD_epoch_' + str(check_point) + '_cpu.pth'))
 	
 	for epoch in range(1 + max(check_point, 0), n_epoch + 1 + max(check_point, 0)):
 		train_bar = tqdm(train_loader)
@@ -160,33 +159,29 @@ def main():
 		
 		cache = {'mse_loss': 0, 'tv_loss': 0, 'adv_loss': 0, 'g_loss': 0, 'd_loss': 0, 'ssim': 0, 'psnr': 0}
 		
-		for data, target in train_bar:
+		for lowres, real_img_hr in train_bar:
 			#print ('lr size : ' + str(data.size()))
 			#print ('hr size : ' + str(target.size()))
-			real_img_hr = Variable(target)
 			if torch.cuda.is_available():
 				real_img_hr = real_img_hr.cuda()
-				
-			lowres = Variable(data)
-			if torch.cuda.is_available():
 				lowres = lowres.cuda()
-				
+			
+			real_img_hr = Variable(real_img_hr)
+			fake_img_hr = Variable(netG(lowres).data)
+			
 			# Train D
 			if not check_grads(netD, 'D'):
 				return
 			netD.zero_grad()
-				
-			fake_img_hr = netG(lowres)
-			#print ('sr size : ' + str(fake_img_hr.size()))
 			
 			logits_real = netD(real_img_hr)
 			logits_fake = netD(fake_img_hr)
+			real = Variable(torch.rand(logits_real.size())*0.25 + 0.85)
+			fake = Variable(torch.rand(logits_fake.size())*0.15)
 			
 			#print ('logits real size : ' + str(logits_real.size()))
 			#print ('logits fake size : ' + str(logits_fake.size()))
 			
-			real = Variable(torch.rand(logits_real.size())*0.25 + 0.85)
-			fake = Variable(torch.rand(logits_fake.size())*0.15)
 			if torch.cuda.is_available():
 				real = real.cuda()
 				fake = fake.cuda()
@@ -195,7 +190,7 @@ def main():
 			
 			cache['d_loss'] += d_loss.item()
 			
-			d_loss.backward(retain_graph=True)
+			d_loss.backward()
 			optimizerD.step()
 
 			# Train G
@@ -205,8 +200,8 @@ def main():
 			
 			image_loss = mse(fake_img_hr, real_img_hr)
 			
-			logits_fake = netD(fake_img_hr)
-			adversarial_loss = bce(logits_fake, torch.ones_like(logits_fake))
+			logits_fake_updated = netD(fake_img_hr)
+			adversarial_loss = bce(logits_fake_updated, torch.ones_like(logits_fake_updated))
 			
 			tv_loss = tv(fake_img_hr)
 			
@@ -257,8 +252,8 @@ def main():
 			dev_images = []
 			for val_lr, val_hr_restore, val_hr in dev_bar:
 				batch_size = val_lr.size(0)
-				lr = Variable(val_lr)
-				hr = Variable(val_hr)
+				lr = val_lr
+				hr = val_hr
 				if torch.cuda.is_available():
 					lr = lr.cuda()
 					hr = hr.cuda()
