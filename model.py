@@ -101,7 +101,7 @@ class Discriminator(nn.Module):
 
 			nn.AdaptiveAvgPool2d(1),
 			nn.Conv2d(512, 1024, kernel_size=1),
-			nn.LeakyReLU(0.2),
+			nn.LeakyReLU(l),
 			nn.Conv2d(1024, 1, kernel_size=1)
 		)
 
@@ -112,9 +112,71 @@ class Discriminator(nn.Module):
 		si = torch.sigmoid(y).view(y.size()[0])
 		#print ('D output : ' + str(si))
 		return si
+		
+class Discriminator_WGAN(nn.Module):
+	def __init__(self, l=0.2):
+		super(Discriminator_WGAN, self).__init__()
+		self.net = nn.Sequential(
+			nn.Conv2d(3, 64, kernel_size=3, padding=1),
+			nn.LeakyReLU(l),
 
-# https://github.com/leftthomas/SRGAN/blob/master/loss.py
-	
+			nn.Conv2d(64, 64, kernel_size=3, stride=2, padding=1),
+			nn.LeakyReLU(l),
+
+			nn.Conv2d(64, 128, kernel_size=3, padding=1),
+			nn.LeakyReLU(l),
+
+			nn.Conv2d(128, 128, kernel_size=3, stride=2, padding=1),
+			nn.LeakyReLU(l),
+
+			nn.Conv2d(128, 256, kernel_size=3, padding=1),
+			nn.LeakyReLU(l),
+
+			nn.Conv2d(256, 256, kernel_size=3, stride=2, padding=1),
+			nn.LeakyReLU(l),
+
+			nn.Conv2d(256, 512, kernel_size=3, padding=1),
+			nn.LeakyReLU(l),
+
+			nn.Conv2d(512, 512, kernel_size=3, stride=2, padding=1),
+			nn.LeakyReLU(l),
+
+			nn.AdaptiveAvgPool2d(1),
+			nn.Conv2d(512, 1024, kernel_size=1),
+			nn.LeakyReLU(l),
+			nn.Conv2d(1024, 1, kernel_size=1)
+		)
+
+	def forward(self, x): 
+		#print ('D input size :' +  str(x.size()))
+		y = self.net(x)
+		#print ('D output size :' +  str(y.size()))
+		return y.view(y.size()[0])
+
+def compute_gradient_penalty(D, real_samples, fake_samples):
+	alpha = torch.randn(real_samples.size(0), 1, 1, 1)
+	if torch.cuda.is_available():
+		alpha = alpha.cuda()
+		
+	interpolates = (alpha * real_samples + ((1 - alpha) * fake_samples)).requires_grad_(True)
+	d_interpolates = D(interpolates)
+	fake = torch.ones(d_interpolates.size())
+	if torch.cuda.is_available():
+		fake = fake.cuda()
+		
+	gradients = torch.autograd.grad(
+        outputs=d_interpolates,
+        inputs=interpolates,
+        grad_outputs=fake,
+        create_graph=True,
+        retain_graph=True,
+        only_inputs=True,
+    )[0]
+	gradients = gradients.view(gradients.size(0), -1)
+	gradient_penalty = ((gradients.norm(2, dim=1) - 1) ** 2).mean()
+	return gradient_penalty		
+
+# https://github.com/leftthomas/SRGAN/blob/master/loss.py	
 class TVLoss(nn.Module):
     def __init__(self, tv_loss_weight=1):
         super(TVLoss, self).__init__()

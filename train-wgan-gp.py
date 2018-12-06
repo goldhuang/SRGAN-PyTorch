@@ -16,12 +16,11 @@ from torch.utils.data import DataLoader
 import torchvision.utils as utils
 from torchvision.transforms import Normalize
 
-from math import log10
-import pandas as pd
+from math import log10 
 import pytorch_ssim
 
 from preprocess import TrainDataset, DevDataset, to_image
-from model import Generator, Discriminator, TVLoss
+from model import Generator, Discriminator_WGAN, compute_gradient_penalty
 
 def print_first_parameter(net):	
 	for name, param in net.named_parameters():
@@ -46,7 +45,7 @@ def check_grads(model, model_name):
 	return True
 
 def main():
-	n_epoch_pretrain = 100
+	n_epoch_pretrain = 0
 	use_tensorboard = True
 
 	parser = argparse.ArgumentParser(description='SRGAN Train')
@@ -74,23 +73,19 @@ def main():
 	dev_loader = DataLoader(dataset=dev_set, num_workers=1, batch_size=1, shuffle=False)
 
 	mse = nn.MSELoss()
-	bce = nn.BCELoss()
-	tv = TVLoss()
 		
 	if not torch.cuda.is_available():
 		print ('!!!!!!!!!!!!!!USING CPU!!!!!!!!!!!!!')
 
 	netG = Generator()
 	print('# generator parameters:', sum(param.numel() for param in netG.parameters()))
-	netD = Discriminator()
+	netD = Discriminator_WGAN()
 	print('# discriminator parameters:', sum(param.numel() for param in netD.parameters()))
 
 	if torch.cuda.is_available():
 		netG.cuda()
 		netD.cuda()
-		tv.cuda()
 		mse.cuda()
-		bce.cuda()
 	
 	if use_tensorboard:
 		configure('log', flush_secs=5)
@@ -140,14 +135,14 @@ def main():
 	if check_point != -1:
 		if torch.cuda.is_available():
 			netG.load_state_dict(torch.load('cp/netG_epoch_' + str(check_point) + '_gpu.pth'))
-			netD.load_state_dict(torch.load('cp/netD_epoch_' + str(check_point) + '_gpu.pth'))
-			optimizerG.load_state_dict(torch.load('cp/optimizerG_epoch_' + str(check_point) + '_gpu.pth'))
-			optimizerD.load_state_dict(torch.load('cp/optimizerD_epoch_' + str(check_point) + '_gpu.pth'))
+			#netD.load_state_dict(torch.load('cp/netD_epoch_' + str(check_point) + '_gpu.pth'))
+			#optimizerG.load_state_dict(torch.load('cp/optimizerG_epoch_' + str(check_point) + '_gpu.pth'))
+			#optimizerD.load_state_dict(torch.load('cp/optimizerD_epoch_' + str(check_point) + '_gpu.pth'))
 		else :
 			netG.load_state_dict(torch.load('cp/netG_epoch_' + str(check_point) + '_cpu.pth'))
-			netD.load_state_dict(torch.load('cp/netD_epoch_' + str(check_point) + '_cpu.pth'))
-			optimizerG.load_state_dict(torch.load('cp/optimizerG_epoch_' + str(check_point) + '_cpu.pth'))
-			optimizerD.load_state_dict(torch.load('cp/optimizerD_epoch_' + str(check_point) + '_cpu.pth'))
+			#netD.load_state_dict(torch.load('cp/netD_epoch_' + str(check_point) + '_cpu.pth'))
+			#optimizerG.load_state_dict(torch.load('cp/optimizerG_epoch_' + str(check_point) + '_cpu.pth'))
+			#optimizerD.load_state_dict(torch.load('cp/optimizerD_epoch_' + str(check_point) + '_cpu.pth'))
 	
 	for epoch in range(1 + max(check_point, 0), n_epoch + 1 + max(check_point, 0)):
 		train_bar = tqdm(train_loader)
@@ -169,20 +164,12 @@ def main():
 				return
 			netD.zero_grad()
 			
-			logits_real = netD(real_img_hr)
-			logits_fake = netD(netG(lowres).detach())
-			
-			real = torch.tensor(torch.rand(logits_real.size())*0.25 + 0.85)
-			fake = torch.tensor(torch.rand(logits_fake.size())*0.15)
-			
-			#print ('logits real size : ' + str(logits_real.size()))
-			#print ('logits fake size : ' + str(logits_fake.size()))
-			
-			if torch.cuda.is_available():
-				real = real.cuda()
-				fake = fake.cuda()
+			fake_img_hr = netG(lowres).detach()
+			logits_real = netD(real_img_hr).mean()
+			logits_fake = netD(fake_img_hr).mean()
+			gradient_penalty = compute_gradient_penalty(netD, real_img_hr, fake_img_hr)
             
-			d_loss = bce(logits_real, real) + bce(logits_fake, fake)
+			d_loss = logits_fake - logits_real + 10*gradient_penalty
 			
 			cache['d_loss'] += d_loss.item()
 			
@@ -194,18 +181,14 @@ def main():
 				return
 			netG.zero_grad()
 			
-			fake_img_hr = netG(lowres)
-			image_loss = mse(fake_img_hr, real_img_hr)
+			fake_img_hr_grad = netG(lowres)
 			
-			logits_fake_new = netD(fake_img_hr)
-			adversarial_loss = bce(logits_fake_new, torch.ones_like(logits_fake_new))
+			image_loss = mse(fake_img_hr_grad, real_img_hr)
+			adversarial_loss = -1*netD(fake_img_hr_grad).mean()
 			
-			tv_loss = tv(fake_img_hr)
-			
-			g_loss = image_loss + 1e-3*adversarial_loss + 2e-8*tv_loss
+			g_loss = image_loss + 1e-4*adversarial_loss
 
 			cache['mse_loss'] += image_loss.item()
-			cache['tv_loss'] += tv_loss.item()
 			cache['adv_loss'] += adversarial_loss.item()
 			cache['g_loss'] += g_loss.item()
 
@@ -213,13 +196,12 @@ def main():
 			optimizerG.step()
 
 			# Print information by tqdm
-			train_bar.set_description(desc='[%d/%d] Loss_D: %.4f Loss_G: %.4f = %.4f + %.4f + %.4f' % (epoch, n_epoch, d_loss, g_loss, image_loss, tv_loss, adversarial_loss))
+			train_bar.set_description(desc='[%d/%d] Loss_D: %.4f Loss_G: %.4f = %.4f + %.4f' % (epoch, n_epoch, d_loss, g_loss, image_loss, adversarial_loss))
 		
 		if use_tensorboard:
 			log_value('d_loss', cache['d_loss']/len(train_loader), epoch)
 		
 			log_value('mse_loss', cache['mse_loss']/len(train_loader), epoch)
-			log_value('tv_loss', cache['tv_loss']/len(train_loader), epoch)
 			log_value('adv_loss', cache['adv_loss']/len(train_loader), epoch)
 			log_value('g_loss', cache['g_loss']/len(train_loader), epoch)
 		
