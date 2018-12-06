@@ -9,8 +9,6 @@ from tensorboard_logger import configure, log_value
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.optim.lr_scheduler import MultiStepLR
-from torch.autograd import Variable
 
 import torch.utils.data
 from torch.utils.data import DataLoader
@@ -166,18 +164,16 @@ def main():
 				real_img_hr = real_img_hr.cuda()
 				lowres = lowres.cuda()
 			
-			real_img_hr = Variable(real_img_hr)
-			fake_img_hr = Variable(netG(lowres))
-			
 			# Train D
 			if not check_grads(netD, 'D'):
 				return
 			netD.zero_grad()
 			
 			logits_real = netD(real_img_hr)
-			logits_fake = netD(fake_img_hr)
-			real = Variable(torch.rand(logits_real.size())*0.25 + 0.85)
-			fake = Variable(torch.rand(logits_fake.size())*0.15)
+			logits_fake = netD(netG(lowres).detach())
+			
+			real = torch.tensor(torch.rand(logits_real.size())*0.25 + 0.85)
+			fake = torch.tensor(torch.rand(logits_fake.size())*0.15)
 			
 			#print ('logits real size : ' + str(logits_real.size()))
 			#print ('logits fake size : ' + str(logits_fake.size()))
@@ -198,10 +194,11 @@ def main():
 				return
 			netG.zero_grad()
 			
+			fake_img_hr = netG(lowres)
 			image_loss = mse(fake_img_hr, real_img_hr)
 			
-			logits_fake_updated = netD(fake_img_hr)
-			adversarial_loss = bce(logits_fake_updated, torch.ones_like(logits_fake_updated))
+			logits_fake_new = netD(fake_img_hr)
+			adversarial_loss = bce(logits_fake_new, torch.ones_like(logits_fake_new))
 			
 			tv_loss = tv(fake_img_hr)
 			
