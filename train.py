@@ -108,11 +108,11 @@ def main():
 				# Print information by tqdm
 				train_bar.set_description(desc='[%d/%d] Loss_G: %.4f' % (epoch, n_epoch_pretrain, image_loss))
 				
-			# Save model parameters	
-			if torch.cuda.is_available():
-				torch.save(netG.state_dict(), 'cp/netG_epoch_pre_gpu.pth')
-			else:
-				torch.save(netG.state_dict(), 'cp/netG_epoch_pre_cpu.pth')
+		# Save model parameters	
+		#if torch.cuda.is_available():
+		#	torch.save(netG.state_dict(), 'cp/netG_epoch_pre_gpu.pth')
+		#else:
+		#	torch.save(netG.state_dict(), 'cp/netG_epoch_pre_cpu.pth')
 	
 	optimizerG = optim.Adam(netG.parameters())
 	optimizerD = optim.Adam(netD.parameters())
