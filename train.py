@@ -23,27 +23,7 @@ import pytorch_ssim
 from preprocess import TrainDataset, DevDataset, to_image
 from model import Generator, Discriminator, TVLoss
 
-def print_first_parameter(net):	
-	for name, param in net.named_parameters():
-		if param.requires_grad:
-			print (str(name) + ':' + str(param.data[0]))
-			return
-
-def check_grads(model, model_name):
-	grads = []
-	for p in model.parameters():
-		if not p.grad is None:
-			grads.append(float(p.grad.mean()))
-
-	grads = np.array(grads)
-	if grads.any() and grads.mean() > 100:
-		print('WARNING!' + model_name + ' gradients mean is over 100.')
-		return False
-	if grads.any() and grads.max() > 100:
-		print('WARNING!' + model_name + ' gradients max is over 100.')
-		return False
-		
-	return True
+from utils import print_first_parameter, check_grads, get_grads_D, get_grads_G
 
 def main():
 	n_epoch_pretrain = 100
@@ -51,7 +31,7 @@ def main():
 
 	parser = argparse.ArgumentParser(description='SRGAN Train')
 	parser.add_argument('--crop_size', default=64, type=int, help='training images crop size')
-	parser.add_argument('--num_epochs', default=100, type=int, help='training epoch')
+	parser.add_argument('--num_epochs', default=2000, type=int, help='training epoch')
 	parser.add_argument('--batch_size', default=64, type=int, help='training batch size')
 	parser.add_argument('--train_set', default='data/train', type=str, help='train set path')
 	parser.add_argument('--check_point', type=int, default=-1, help="continue with previous check_point")
@@ -155,7 +135,7 @@ def main():
 		netG.train()
 		netD.train()
 		
-		cache = {'mse_loss': 0, 'tv_loss': 0, 'adv_loss': 0, 'g_loss': 0, 'd_loss': 0, 'ssim': 0, 'psnr': 0}
+		cache = {'mse_loss': 0, 'tv_loss': 0, 'adv_loss': 0, 'g_loss': 0, 'd_loss': 0, 'ssim': 0, 'psnr': 0, 'd_top_grad' : 0, 'd_bot_grad' : 0, 'g_top_grad' : 0, 'g_bot_grad' : 0}
 		
 		for lowres, real_img_hr in train_bar:
 			#print ('lr size : ' + str(data.size()))
@@ -165,15 +145,20 @@ def main():
 				lowres = lowres.cuda()
 			
 			# Train D
-			if not check_grads(netD, 'D'):
-				return
+			
+			#if not check_grads(netD, 'D'):
+			#	return
 			netD.zero_grad()
 			
 			logits_real = netD(real_img_hr)
 			logits_fake = netD(netG(lowres).detach())
 			
+			# Lable smoothing
 			real = torch.tensor(torch.rand(logits_real.size())*0.25 + 0.85)
 			fake = torch.tensor(torch.rand(logits_fake.size())*0.15)
+			
+			# Lable flipping
+			prob = (torch.rand(logits_real.size()) < 0.05)
 			
 			#print ('logits real size : ' + str(logits_real.size()))
 			#print ('logits fake size : ' + str(logits_fake.size()))
@@ -181,17 +166,28 @@ def main():
 			if torch.cuda.is_available():
 				real = real.cuda()
 				fake = fake.cuda()
+				prob = prob.cuda()
+				
+			real_clone = real.clone()
+			real[prob] = fake[prob]
+			fake[prob] = real_clone[prob]
             
-			d_loss = bce(logits_real, real) + bce(logits_fake, fake)
+			d_loss = 0.5*(bce(logits_real, real) + bce(logits_fake, fake))
 			
 			cache['d_loss'] += d_loss.item()
 			
 			d_loss.backward()
 			optimizerD.step()
+			
+			dtg, dbg = get_grads_D(netD)
+
+			cache['d_top_grad'] += dtg
+			cache['d_bot_grad'] += dbg
 
 			# Train G
-			if not check_grads(netG, 'G'):
-				return
+					
+			#if not check_grads(netG, 'G'):
+			#	return
 			netG.zero_grad()
 			
 			fake_img_hr = netG(lowres)
@@ -200,28 +196,36 @@ def main():
 			logits_fake_new = netD(fake_img_hr)
 			adversarial_loss = bce(logits_fake_new, torch.ones_like(logits_fake_new))
 			
-			tv_loss = tv(fake_img_hr)
+			#tv_loss = tv(fake_img_hr)
 			
-			g_loss = image_loss + 1e-3*adversarial_loss + 2e-8*tv_loss
+			g_loss = image_loss + adversarial_loss
 
 			cache['mse_loss'] += image_loss.item()
-			cache['tv_loss'] += tv_loss.item()
+			#cache['tv_loss'] += tv_loss.item()
 			cache['adv_loss'] += adversarial_loss.item()
 			cache['g_loss'] += g_loss.item()
 
 			g_loss.backward()
 			optimizerG.step()
+			
+			gtg, gbg = get_grads_G(netG)
+
 
 			# Print information by tqdm
-			train_bar.set_description(desc='[%d/%d] Loss_D: %.4f Loss_G: %.4f = %.4f + %.4f + %.4f' % (epoch, n_epoch, d_loss, g_loss, image_loss, tv_loss, adversarial_loss))
+			train_bar.set_description(desc='[%d/%d] D grads:(%f, %f) G grads:(%f, %f) Loss_D: %.4f Loss_G: %.4f = %.4f + %.4f' % (epoch, n_epoch, dtg, dbg, gtg, gbg, d_loss, g_loss, image_loss, adversarial_loss))
 		
 		if use_tensorboard:
 			log_value('d_loss', cache['d_loss']/len(train_loader), epoch)
 		
 			log_value('mse_loss', cache['mse_loss']/len(train_loader), epoch)
-			log_value('tv_loss', cache['tv_loss']/len(train_loader), epoch)
+			#log_value('tv_loss', cache['tv_loss']/len(train_loader), epoch)
 			log_value('adv_loss', cache['adv_loss']/len(train_loader), epoch)
 			log_value('g_loss', cache['g_loss']/len(train_loader), epoch)
+			
+			log_value('D top layer gradient', cache['d_top_grad']/len(train_loader), epoch)
+			log_value('D bot layer gradient', cache['d_bot_grad']/len(train_loader), epoch)
+			log_value('G top layer gradient', cache['g_top_grad']/len(train_loader), epoch)
+			log_value('G bot layer gradient', cache['g_bot_grad']/len(train_loader), epoch)
 		
 		# Save model parameters	
 		if torch.cuda.is_available():
