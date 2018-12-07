@@ -26,7 +26,7 @@ from model import Generator, Discriminator, TVLoss
 from utils import print_first_parameter, check_grads, get_grads_D, get_grads_G
 
 def main():
-	n_epoch_pretrain = 100
+	n_epoch_pretrain = 2
 	use_tensorboard = True
 
 	parser = argparse.ArgumentParser(description='SRGAN Train')
@@ -55,7 +55,7 @@ def main():
 
 	mse = nn.MSELoss()
 	bce = nn.BCELoss()
-	tv = TVLoss()
+	#tv = TVLoss()
 		
 	if not torch.cuda.is_available():
 		print ('!!!!!!!!!!!!!!USING CPU!!!!!!!!!!!!!')
@@ -68,7 +68,7 @@ def main():
 	if torch.cuda.is_available():
 		netG.cuda()
 		netD.cuda()
-		tv.cuda()
+		#tv.cuda()
 		mse.cuda()
 		bce.cuda()
 	
@@ -210,6 +210,8 @@ def main():
 			
 			gtg, gbg = get_grads_G(netG)
 
+			cache['g_top_grad'] += gtg
+			cache['g_bot_grad'] += gbg
 
 			# Print information by tqdm
 			train_bar.set_description(desc='[%d/%d] D grads:(%f, %f) G grads:(%f, %f) Loss_D: %.4f Loss_G: %.4f = %.4f + %.4f' % (epoch, n_epoch, dtg, dbg, gtg, gbg, d_loss, g_loss, image_loss, adversarial_loss))
