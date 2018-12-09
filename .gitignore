@@ -1,8 +1,6 @@
 generated/*
 log/*
-RES/*
 *.pyc
-*.pth
 *.png
 *.DS_Store
 *.jpg
