@@ -17,7 +17,6 @@ import torchvision.utils as utils
 from torchvision.transforms import Normalize
 
 from math import log10
-import pandas as pd
 import pytorch_ssim
 
 from preprocess import TrainDataset, DevDataset, to_image
@@ -30,7 +29,7 @@ def main():
 	use_tensorboard = True
 
 	parser = argparse.ArgumentParser(description='SRGAN Train')
-	parser.add_argument('--crop_size', default=64, type=int, help='training images crop size')
+	parser.add_argument('--crop_size', default=128, type=int, help='training images crop size')
 	parser.add_argument('--num_epochs', default=2000, type=int, help='training epoch')
 	parser.add_argument('--batch_size', default=64, type=int, help='training batch size')
 	parser.add_argument('--train_set', default='data/train', type=str, help='train set path')
@@ -172,7 +171,7 @@ def main():
 			real[prob] = fake[prob]
 			fake[prob] = real_clone[prob]
             
-			d_loss = 0.5*(bce(logits_real, real) + bce(logits_fake, fake))
+			d_loss = bce(logits_real, real) + bce(logits_fake, fake)
 			
 			cache['d_loss'] += d_loss.item()
 			
@@ -198,7 +197,7 @@ def main():
 			
 			#tv_loss = tv(fake_img_hr)
 			
-			g_loss = image_loss + adversarial_loss
+			g_loss = image_loss + 1e-2*adversarial_loss
 
 			cache['mse_loss'] += image_loss.item()
 			#cache['tv_loss'] += tv_loss.item()
@@ -270,7 +269,6 @@ def main():
 				cache['ssim'] += ssim
 				cache['psnr'] += psnr
 				
-				# Only save 1 images to avoid out of memory 
 				if len(dev_images) < 60 :
 					dev_images.extend([to_image()(val_hr_restore.squeeze(0)), to_image()(hr.data.cpu().squeeze(0)), to_image()(sr.data.cpu().squeeze(0))])
 			
