@@ -269,6 +269,7 @@ def main():
 				cache['ssim'] += ssim
 				cache['psnr'] += psnr
 				
+				# Avoid out of memory crash on 8G GPU
 				if len(dev_images) < 60 :
 					dev_images.extend([to_image()(val_hr_restore.squeeze(0)), to_image()(hr.data.cpu().squeeze(0)), to_image()(sr.data.cpu().squeeze(0))])
 			
