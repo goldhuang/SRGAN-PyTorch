@@ -99,8 +99,8 @@ def main():
 				# Print information by tqdm
 				train_bar.set_description(desc='[%d/%d] Loss_G: %.4f' % (epoch, n_epoch_pretrain, image_loss))
 	
-	optimizerG = optim.Adam(netG.parameters())
-	optimizerD = optim.Adam(netD.parameters())
+	optimizerG = optim.Adam(netG.parameters(), lr=1e-4)
+	optimizerD = optim.Adam(netD.parameters(), lr=1e-4)
 	
 	if check_point != -1:
 		if torch.cuda.is_available():
@@ -158,7 +158,7 @@ def main():
 			image_loss = mse(fake_img_hr, real_img_hr)
 			adversarial_loss = -1*netD(fake_img_hr).mean()
 			
-			g_loss = image_loss + 8e-3*adversarial_loss
+			g_loss = image_loss + 1e-3*adversarial_loss
 
 			cache['mse_loss'] += image_loss.item()
 			cache['adv_loss'] += adversarial_loss.item()
