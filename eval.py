@@ -39,7 +39,7 @@ def main():
 	val_loader = DataLoader(dataset=val_set, num_workers=1, batch_size=1, shuffle=False)
 	
 	now = time.gmtime(time.time())
-	configure(str(now.tm_mon) + '-' + str(now.tm_mday) + '-' + str(now.tm_hour) + '-' + str(now.tm_min), flush_secs=5)
+	#configure(str(now.tm_mon) + '-' + str(now.tm_mday) + '-' + str(now.tm_hour) + '-' + str(now.tm_min), flush_secs=5)
         
 	netG = Generator()
 
@@ -52,8 +52,6 @@ def main():
 				
 	for epoch in range(start, end+1):
 		if epoch%interval == 0:
-			netG.load_state_dict(torch.load('cp/netG_epoch_'+ str(epoch) +'_gpu.pth'))
-		
 			with torch.no_grad():
 				netG.eval()
 
@@ -69,30 +67,35 @@ def main():
 						lr = lr.cuda()
 						hr = hr.cuda()
 						
+					netG.load_state_dict(torch.load('cp/netG_epoch_'+ str(epoch) +'_gpu.pth'))	
 					sr = netG(lr)
 
-					psnr = 10 * log10(1 / ((sr - hr) ** 2).mean().item())
-					ssim = pytorch_ssim.ssim(sr, hr).item()
-					val_bar.set_description(desc='[converting LR images to SR images] PSNR: %.4f dB SSIM: %.4f' % (psnr, ssim))
+					#psnr = 10 * log10(1 / ((sr - hr) ** 2).mean().item())
+					#ssim = pytorch_ssim.ssim(sr, hr).item()
+					#val_bar.set_description(desc='[converting LR images to SR images] PSNR: %.4f dB SSIM: %.4f' % (psnr, ssim))
 				
-					cache['ssim'] += ssim
-					cache['psnr'] += psnr
-
-					if len(dev_images) < 60 :
-						dev_images.extend([to_image()(val_hr_restore.squeeze(0)), to_image()(hr.data.cpu().squeeze(0)), to_image()(sr.data.cpu().squeeze(0))])
+					#cache['ssim'] += ssim
+					#cache['psnr'] += psnr
+					
+					netG.load_state_dict(torch.load('cp/netG_baseline_gpu.pth'))
+					sr_baseline = netG(lr)
+					
+					# Avoid out of memory crash on 8G GPU
+					if len(dev_images) < 80 :
+						dev_images.extend([to_image()(val_hr_restore.squeeze(0)), to_image()(hr.data.cpu().squeeze(0)), to_image()(sr.data.cpu().squeeze(0)), to_image()(sr_baseline.data.cpu().squeeze(0))])
 			
 				dev_images = torch.stack(dev_images)
-				dev_images = torch.chunk(dev_images, dev_images.size(0) // 3)
+				dev_images = torch.chunk(dev_images, dev_images.size(0) // 4)
 
 				dev_save_bar = tqdm(dev_images, desc='[saving training results]')
 				index = 1
 				for image in dev_save_bar:
-					image = utils.make_grid(image, nrow=3, padding=5)
+					image = utils.make_grid(image, nrow=4, padding=5)
 					utils.save_image(image, out_path + 'epoch_%d_index_%d.png' % (epoch, index), padding=5)
 					index += 1
 
-				log_value('ssim', cache['ssim']/len(val_loader), epoch)
-				log_value('psnr', cache['psnr']/len(val_loader), epoch)
+				#log_value('ssim', cache['ssim']/len(val_loader), epoch)
+				#log_value('psnr', cache['psnr']/len(val_loader), epoch)
 			
 if __name__ == '__main__':
 	main()
