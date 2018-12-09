@@ -19,10 +19,9 @@ from torchvision.transforms import Normalize
 from math import log10
 import pytorch_ssim
 
-from preprocess import TrainDataset, DevDataset, to_image
 from model import Generator, Discriminator, TVLoss
 
-from utils import print_first_parameter, check_grads, get_grads_D, get_grads_G
+from utils import TrainDataset, DevDataset, to_image, print_first_parameter, check_grads, get_grads_D, get_grads_G
 
 def main():
 	n_epoch_pretrain = 2
