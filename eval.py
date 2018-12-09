@@ -24,19 +24,19 @@ from model import Generator
 
 def main():
 	parser = argparse.ArgumentParser(description='Validate SRGAN')
-	parser.add_argument('--dev_set', default='data/dev', type=str, help='dev set path')
+	parser.add_argument('--val_set', default='data/val', type=str, help='dev set path')
 	parser.add_argument('--start', default=1, type=int, help='model start')
 	parser.add_argument('--end', default=100, type=int, help='model end')
 	parser.add_argument('--interval', default=1, type=int, help='model end')
 	
 	opt = parser.parse_args()
-	dev_path = opt.dev_set
+	val_path = opt.val_set
 	start = opt.start
 	end = opt.end
 	interval = opt.interval
 
-	dev_set = DevDataset(dev_path, upscale_factor=4)
-	dev_loader = DataLoader(dataset=dev_set, num_workers=1, batch_size=1, shuffle=False)
+	val_set = DevDataset(val_path, upscale_factor=4)
+	val_loader = DataLoader(dataset=val_set, num_workers=1, batch_size=1, shuffle=False)
 	
 	now = time.gmtime(time.time())
 	configure(str(now.tm_mon) + '-' + str(now.tm_mday) + '-' + str(now.tm_hour) + '-' + str(now.tm_min), flush_secs=5)
@@ -57,13 +57,11 @@ def main():
 			with torch.no_grad():
 				netG.eval()
 
-				dev_bar = tqdm(dev_loader)
+				val_bar = tqdm(val_loader)
 				cache = {'ssim': 0, 'psnr': 0}
-				valing_results = {'mse': 0, 'ssims': 0, 'psnr': 0, 'ssim': 0, 'batch_sizes': 0}
 				dev_images = []
-				for val_lr, val_hr_restore, val_hr in dev_bar:
+				for val_lr, val_hr_restore, val_hr in val_bar:
 					batch_size = val_lr.size(0)
-					valing_results['batch_sizes'] += batch_size
 
 					lr = Variable(val_lr)
 					hr = Variable(val_hr)
@@ -73,23 +71,18 @@ def main():
 						
 					sr = netG(lr)
 
-					batch_mse = ((sr - hr) ** 2).data.mean().item()
-					valing_results['mse'] += batch_mse * batch_size
-					batch_ssim = pytorch_ssim.ssim(sr, hr).item()
-					valing_results['ssims'] += batch_ssim * batch_size
-					valing_results['psnr'] = 10 * log10(1 / (valing_results['mse'] / valing_results['batch_sizes']))
-					valing_results['ssim'] = valing_results['ssims'] / valing_results['batch_sizes']
-					dev_bar.set_description(desc='[converting LR images to SR images] PSNR: %.4f dB SSIM: %.4f' % (valing_results['psnr'], valing_results['ssim']))
+					psnr = 10 * log10(1 / ((sr - hr) ** 2).mean().item())
+					ssim = pytorch_ssim.ssim(sr, hr).item()
+					val_bar.set_description(desc='[converting LR images to SR images] PSNR: %.4f dB SSIM: %.4f' % (psnr, ssim))
+				
+					cache['ssim'] += ssim
+					cache['psnr'] += psnr
 
-					cache['ssim'] += valing_results['ssim']
-					cache['psnr'] += valing_results['psnr']
-
-					# Only save 1 images to avoid out of memory
-					if len(dev_images) < 120 :
+					if len(dev_images) < 60 :
 						dev_images.extend([to_image()(val_hr_restore.squeeze(0)), to_image()(hr.data.cpu().squeeze(0)), to_image()(sr.data.cpu().squeeze(0))])
-
+			
 				dev_images = torch.stack(dev_images)
-				dev_images = torch.chunk(dev_images, dev_images.size(0) // 6)
+				dev_images = torch.chunk(dev_images, dev_images.size(0) // 3)
 
 				dev_save_bar = tqdm(dev_images, desc='[saving training results]')
 				index = 1
@@ -98,8 +91,8 @@ def main():
 					utils.save_image(image, out_path + 'epoch_%d_index_%d.png' % (epoch, index), padding=5)
 					index += 1
 
-				log_value('ssim', cache['ssim']/len(dev_loader), epoch)
-				log_value('psnr', cache['psnr']/len(dev_loader), epoch)
+				log_value('ssim', cache['ssim']/len(val_loader), epoch)
+				log_value('psnr', cache['psnr']/len(val_loader), epoch)
 			
 if __name__ == '__main__':
 	main()
