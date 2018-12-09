@@ -16,42 +16,20 @@ from torch.utils.data import DataLoader
 import torchvision.utils as utils
 from torchvision.transforms import Normalize
 
-from math import log10 
+from math import log10
 import pytorch_ssim
 
-from preprocess import TrainDataset, DevDataset, to_image
 from model import Generator, Discriminator_WGAN, compute_gradient_penalty
-
-def print_first_parameter(net):	
-	for name, param in net.named_parameters():
-		if param.requires_grad:
-			print (str(name) + ':' + str(param.data[0]))
-			return
-
-def check_grads(model, model_name):
-	grads = []
-	for p in model.parameters():
-		if not p.grad is None:
-			grads.append(float(p.grad.mean()))
-
-	grads = np.array(grads)
-	if grads.any() and grads.mean() > 100:
-		print('WARNING!' + model_name + ' gradients mean is over 100.')
-		return False
-	if grads.any() and grads.max() > 100:
-		print('WARNING!' + model_name + ' gradients max is over 100.')
-		return False
-		
-	return True
+from utils import TrainDataset, DevDataset, to_image, print_first_parameter, check_grads, get_grads_D_WAN, get_grads_G
 
 def main():
-	n_epoch_pretrain = 0
+	n_epoch_pretrain = 2
 	use_tensorboard = True
 
 	parser = argparse.ArgumentParser(description='SRGAN Train')
-	parser.add_argument('--crop_size', default=64, type=int, help='training images crop size')
-	parser.add_argument('--num_epochs', default=100, type=int, help='training epoch')
-	parser.add_argument('--batch_size', default=64, type=int, help='training batch size')
+	parser.add_argument('--crop_size', default=96, type=int, help='training images crop size')
+	parser.add_argument('--num_epochs', default=2000, type=int, help='training epoch')
+	parser.add_argument('--batch_size', default=32, type=int, help='training batch size')
 	parser.add_argument('--train_set', default='data/train', type=str, help='train set path')
 	parser.add_argument('--check_point', type=int, default=-1, help="continue with previous check_point")
 
@@ -93,9 +71,7 @@ def main():
 	# Pre-train generator using only MSE loss
 	if check_point == -1:
 		optimizerG = optim.Adam(netG.parameters())
-		#schedulerG = MultiStepLR(optimizerG, milestones=[20], gamma=0.1)
-		for epoch in range(1, n_epoch_pretrain + 1):
-			#schedulerG.step()		
+		for epoch in range(1, n_epoch_pretrain + 1):	
 			train_bar = tqdm(train_loader)
 			
 			netG.train()
@@ -122,12 +98,6 @@ def main():
 
 				# Print information by tqdm
 				train_bar.set_description(desc='[%d/%d] Loss_G: %.4f' % (epoch, n_epoch_pretrain, image_loss))
-				
-			# Save model parameters	
-			if torch.cuda.is_available():
-				torch.save(netG.state_dict(), 'cp/netG_epoch_pre_gpu.pth')
-			else:
-				torch.save(netG.state_dict(), 'cp/netG_epoch_pre_cpu.pth')
 	
 	optimizerG = optim.Adam(netG.parameters())
 	optimizerD = optim.Adam(netD.parameters())
@@ -135,14 +105,14 @@ def main():
 	if check_point != -1:
 		if torch.cuda.is_available():
 			netG.load_state_dict(torch.load('cp/netG_epoch_' + str(check_point) + '_gpu.pth'))
-			#netD.load_state_dict(torch.load('cp/netD_epoch_' + str(check_point) + '_gpu.pth'))
-			#optimizerG.load_state_dict(torch.load('cp/optimizerG_epoch_' + str(check_point) + '_gpu.pth'))
-			#optimizerD.load_state_dict(torch.load('cp/optimizerD_epoch_' + str(check_point) + '_gpu.pth'))
+			netD.load_state_dict(torch.load('cp/netD_epoch_' + str(check_point) + '_gpu.pth'))
+			optimizerG.load_state_dict(torch.load('cp/optimizerG_epoch_' + str(check_point) + '_gpu.pth'))
+			optimizerD.load_state_dict(torch.load('cp/optimizerD_epoch_' + str(check_point) + '_gpu.pth'))
 		else :
 			netG.load_state_dict(torch.load('cp/netG_epoch_' + str(check_point) + '_cpu.pth'))
-			#netD.load_state_dict(torch.load('cp/netD_epoch_' + str(check_point) + '_cpu.pth'))
-			#optimizerG.load_state_dict(torch.load('cp/optimizerG_epoch_' + str(check_point) + '_cpu.pth'))
-			#optimizerD.load_state_dict(torch.load('cp/optimizerD_epoch_' + str(check_point) + '_cpu.pth'))
+			netD.load_state_dict(torch.load('cp/netD_epoch_' + str(check_point) + '_cpu.pth'))
+			optimizerG.load_state_dict(torch.load('cp/optimizerG_epoch_' + str(check_point) + '_cpu.pth'))
+			optimizerD.load_state_dict(torch.load('cp/optimizerD_epoch_' + str(check_point) + '_cpu.pth'))
 	
 	for epoch in range(1 + max(check_point, 0), n_epoch + 1 + max(check_point, 0)):
 		train_bar = tqdm(train_loader)
@@ -150,21 +120,21 @@ def main():
 		netG.train()
 		netD.train()
 		
-		cache = {'mse_loss': 0, 'tv_loss': 0, 'adv_loss': 0, 'g_loss': 0, 'd_loss': 0, 'ssim': 0, 'psnr': 0}
+		cache = {'mse_loss': 0, 'adv_loss': 0, 'g_loss': 0, 'd_loss': 0, 'ssim': 0, 'psnr': 0, 'd_top_grad' : 0, 'd_bot_grad' : 0, 'g_top_grad' : 0, 'g_bot_grad' : 0}
 		
 		for lowres, real_img_hr in train_bar:
 			#print ('lr size : ' + str(data.size()))
 			#print ('hr size : ' + str(target.size()))
+			
 			if torch.cuda.is_available():
 				real_img_hr = real_img_hr.cuda()
 				lowres = lowres.cuda()
+				
+			fake_img_hr = netG(lowres)
 			
 			# Train D
-			if not check_grads(netD, 'D'):
-				return
 			netD.zero_grad()
 			
-			fake_img_hr = netG(lowres).detach()
 			logits_real = netD(real_img_hr).mean()
 			logits_fake = netD(fake_img_hr).mean()
 			gradient_penalty = compute_gradient_penalty(netD, real_img_hr, fake_img_hr)
@@ -173,20 +143,22 @@ def main():
 			
 			cache['d_loss'] += d_loss.item()
 			
-			d_loss.backward()
+			d_loss.backward(retain_graph=True)
 			optimizerD.step()
+			
+			dtg, dbg = get_grads_D_WAN(netD)
+
+			cache['d_top_grad'] += dtg
+			cache['d_bot_grad'] += dbg
 
 			# Train G
-			if not check_grads(netG, 'G'):
-				return
+			
 			netG.zero_grad()
 			
-			fake_img_hr_grad = netG(lowres)
+			image_loss = mse(fake_img_hr, real_img_hr)
+			adversarial_loss = -1*netD(fake_img_hr).mean()
 			
-			image_loss = mse(fake_img_hr_grad, real_img_hr)
-			adversarial_loss = -1*netD(fake_img_hr_grad).mean()
-			
-			g_loss = image_loss + 1e-4*adversarial_loss
+			g_loss = image_loss + 8e-3*adversarial_loss
 
 			cache['mse_loss'] += image_loss.item()
 			cache['adv_loss'] += adversarial_loss.item()
@@ -194,9 +166,14 @@ def main():
 
 			g_loss.backward()
 			optimizerG.step()
+			
+			gtg, gbg = get_grads_G(netG)
+
+			cache['g_top_grad'] += gtg
+			cache['g_bot_grad'] += gbg
 
 			# Print information by tqdm
-			train_bar.set_description(desc='[%d/%d] Loss_D: %.4f Loss_G: %.4f = %.4f + %.4f' % (epoch, n_epoch, d_loss, g_loss, image_loss, adversarial_loss))
+			train_bar.set_description(desc='[%d/%d] D grads:(%f, %f) G grads:(%f, %f) Loss_D: %.4f Loss_G: %.4f = %.4f + %.4f' % (epoch, n_epoch, dtg, dbg, gtg, gbg, d_loss, g_loss, image_loss, adversarial_loss))
 		
 		if use_tensorboard:
 			log_value('d_loss', cache['d_loss']/len(train_loader), epoch)
@@ -204,6 +181,11 @@ def main():
 			log_value('mse_loss', cache['mse_loss']/len(train_loader), epoch)
 			log_value('adv_loss', cache['adv_loss']/len(train_loader), epoch)
 			log_value('g_loss', cache['g_loss']/len(train_loader), epoch)
+			
+			log_value('D top layer gradient', cache['d_top_grad']/len(train_loader), epoch)
+			log_value('D bot layer gradient', cache['d_bot_grad']/len(train_loader), epoch)
+			log_value('G top layer gradient', cache['g_top_grad']/len(train_loader), epoch)
+			log_value('G bot layer gradient', cache['g_bot_grad']/len(train_loader), epoch)
 		
 		# Save model parameters	
 		if torch.cuda.is_available():
@@ -246,7 +228,7 @@ def main():
 				cache['ssim'] += ssim
 				cache['psnr'] += psnr
 				
-				# Only save 1 images to avoid out of memory 
+				# Avoid out of memory crash on 8G GPU
 				if len(dev_images) < 60 :
 					dev_images.extend([to_image()(val_hr_restore.squeeze(0)), to_image()(hr.data.cpu().squeeze(0)), to_image()(sr.data.cpu().squeeze(0))])
 			

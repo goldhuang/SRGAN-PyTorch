@@ -4,3 +4,4 @@ log/*
 *.png
 *.DS_Store
 *.jpg
+*.pth

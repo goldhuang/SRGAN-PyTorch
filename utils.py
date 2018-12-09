@@ -98,6 +98,21 @@ def get_grads_D(net):
 				bottom = param.grad.abs().mean()
 				#print (name + str(param.grad))
 	return top, bottom
+	
+def get_grads_D_WAN(net):
+	top = 0
+	bottom = 0
+	for name, param in net.named_parameters():
+		if param.requires_grad:
+			# Hardcoded param name, subject to change of the network
+			if name == 'net.0.weight':
+				top = param.grad.abs().mean()
+				#print (name + str(param.grad))
+			# Hardcoded param name, subject to change of the network
+			if name == 'net.19.weight':
+				bottom = param.grad.abs().mean()
+				#print (name + str(param.grad))
+	return top, bottom
 
 def get_grads_G(net):
 	top = 0
