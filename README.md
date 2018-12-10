@@ -11,7 +11,7 @@ And another PyTorch WGAN-gp implementation of SRGAN referring to __Improved Trai
 * torchvision
 * tensorboard_logger
 * tqdm
-* CUDA*
+* CUDA* - only tested on Nvidia RTX 2070
 
 
 ## Datasets
