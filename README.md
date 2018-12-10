@@ -16,7 +16,7 @@ And another PyTorch WGAN-gp implementation of SRGAN referring to __Improved Trai
 
 ## Datasets
 
-11328 images from __kaggle dataset__ (https://www.kaggle.com/mylesoneill/tagged-anime-illustrations/home). train/dev/test set sizes are 10816/256/256.
+11328 images from __kaggle dataset__ (https://www.kaggle.com/mylesoneill/tagged-anime-illustrations/home). Train/Dev/Test set sizes are 10816/256/256.
 
 ## Training
 
@@ -25,14 +25,14 @@ And another PyTorch WGAN-gp implementation of SRGAN referring to __Improved Trai
 ```
 python train.py --train_set=data/train
 ```
-See more parameters in train.py
+See more parameters in train.py.
 
 ### WGAN with gradient penalty
 
 ```
 python train-wgangp.py --train_set=data/train
 ```
-See more parameters in train-wgangp.py
+See more parameters in train-wgangp.py.
 
 
 ## Testing
@@ -41,7 +41,7 @@ See more parameters in train-wgangp.py
 python eval.py --val_set=data/val --start=1 --start=100 --interval=1
 ```
 The sample command is to test with all the checkpoints from 1st to 100th epoch and print the results like the ones at the bottom of the page.
-See more parameters in eval.py
+See more parameters in eval.py.
 
 
 ## Single Image Super Resulution
@@ -49,7 +49,7 @@ See more parameters in eval.py
 ```
 python sr.py --lr=lr.png
 ```
-See more parameters in sr.py
+See more parameters in sr.py.
 
 ## Results
 
