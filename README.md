@@ -1,4 +1,5 @@
 # SRGAN for Anime 
+
 A PyTorch implementation of SRGAN based on __Photo-Realistic Single Image Super-Resolution Using a Generative Adversarial Network__ (https://arxiv.org/abs/1609.04802).
 And another PyTorch WGAN-gp implementation of SRGAN referring to __Improved Training of Wasserstein GANs__ (https://arxiv.org/pdf/1704.00028.pdf).
 
@@ -14,15 +15,41 @@ And another PyTorch WGAN-gp implementation of SRGAN referring to __Improved Trai
 
 
 ## Datasets
+
 11328 images from __kaggle dataset__ (https://www.kaggle.com/mylesoneill/tagged-anime-illustrations/home). train/dev/test set sizes are 10816/256/256.
 
 ## Training
 
+### Original SRGAN
+
+```
+python train.py --train_set=data/train
+```
+See more parameters in train.py
+
+### WGAN with gradient penalty
+
+```
+python train-wgangp.py --train_set=data/train
+```
+See more parameters in train-wgangp.py
+
+
 ## Testing
+
+```
+python eval.py --val_set=data/val --start=1 --start=100 --interval=1
+```
+The sample command is to test with all the checkpoints from 1st to 100th epoch and print the results like the ones at the bottom of the page.
+See more parameters in eval.py
+
 
 ## Single Image Super Resulution
 
-```python sr.py --lr=lr_path```
+```
+python sr.py --lr=lr.png
+```
+See more parameters in sr.py
 
 ## Results
 
