@@ -5,6 +5,7 @@ And another PyTorch WGAN-gp implementation of SRGAN referring to __Improved Trai
 
 ## Requirements
 
+* Python 3.*
 * PyTorch
 * torchvision
 * tensorboard_logger
@@ -20,6 +21,8 @@ And another PyTorch WGAN-gp implementation of SRGAN referring to __Improved Trai
 ## Testing
 
 ## Single Image Super Resulution
+
+```python sr.py --lr=lr_path```
 
 ## Results
 
