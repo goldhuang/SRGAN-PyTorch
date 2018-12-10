@@ -13,4 +13,16 @@ And another PyTorch WGAN-gp implementation of SRGAN referring to __Improved Trai
 
 
 ## Datasets
-11328 images (train/dev/test : 10816/256/256) from __kaggle dataset__ (https://www.kaggle.com/mylesoneill/tagged-anime-illustrations/home)
+11328 images from __kaggle dataset__ (https://www.kaggle.com/mylesoneill/tagged-anime-illustrations/home). train/dev/test set sizes are 10816/256/256.
+
+## Training
+
+## Testing
+
+## Single Image Super Resulution
+
+## Results
+
+__Bicubic Upsampled / Original / GAN Upsampled / Deep ResNet Upsampled__
+
+<img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/samples/1.png">
