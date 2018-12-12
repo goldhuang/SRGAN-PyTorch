@@ -57,7 +57,7 @@ See more parameters in sr.py.
 __Bicubic Upsampled / Original / GAN Upsampled / Deep ResNet Upsampled__
 
 ### WGAN-gp
-<img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/results/WGAN-GP/1.png">
+
 <img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/results/WGAN-GP/2.png">
 <img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/results/WGAN-GP/3.png">
 <img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/results/WGAN-GP/4.png">
@@ -70,7 +70,7 @@ __Bicubic Upsampled / Original / GAN Upsampled / Deep ResNet Upsampled__
 <img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/results/WGAN-GP/11.png">
 
 ### SRGAN
-<img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/results/SRGAN/1.png">
+
 <img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/results/SRGAN/2.png">
 <img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/results/SRGAN/3.png">
 <img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/results/SRGAN/4.png">
