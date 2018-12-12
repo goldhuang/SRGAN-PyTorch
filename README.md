@@ -38,7 +38,7 @@ See more parameters in train-wgangp.py.
 ## Testing
 
 ```
-python eval.py --val_set=data/val --start=1 --start=100 --interval=1
+python eval.py --val_set=data/val --start=1 --end=100 --interval=1
 ```
 The sample command is to test with all the checkpoints from 1st to 100th epoch and print the results like the ones at the bottom of the page.
 See more parameters in eval.py.
