@@ -55,15 +55,28 @@ See more parameters in sr.py.
 
 __Bicubic Upsampled / Original / GAN Upsampled / Deep ResNet Upsampled__
 
-<img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/samples/1.png">
-<img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/samples/2.png">
-<img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/samples/3.png">
-<img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/samples/4.png">
-<img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/samples/5.png">
-<img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/samples/6.png">
-<img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/samples/7.png">
-<img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/samples/8.png">
-<img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/samples/9.png">
-<img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/samples/10.png">
-<img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/samples/11.png">
-<img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/samples/12.png">
+### WGAN-gp
+<img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/results/WGAN-GP/1.png">
+<img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/results/WGAN-GP/2.png">
+<img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/results/WGAN-GP/3.png">
+<img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/results/WGAN-GP/4.png">
+<img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/results/WGAN-GP/5.png">
+<img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/results/WGAN-GP/6.png">
+<img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/results/WGAN-GP/7.png">
+<img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/results/WGAN-GP/8.png">
+<img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/results/WGAN-GP/9.png">
+<img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/results/WGAN-GP/10.png">
+<img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/results/WGAN-GP/11.png">
+
+### SRGAN
+<img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/results/SRGAN/1.png">
+<img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/results/SRGAN/2.png">
+<img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/results/SRGAN/3.png">
+<img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/results/SRGAN/4.png">
+<img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/results/SRGAN/5.png">
+<img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/results/SRGAN/6.png">
+<img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/results/SRGAN/7.png">
+<img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/results/SRGAN/8.png">
+<img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/results/SRGAN/9.png">
+<img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/results/SRGAN/10.png">
+<img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/results/SRGAN/11.png">
