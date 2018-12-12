@@ -1,5 +1,6 @@
 import argparse
 import time
+import os
 
 from os.path import basename, normpath
 
@@ -18,6 +19,10 @@ opt = parser.parse_args()
 lr = opt.lr
 pth = opt.m
 with torch.no_grad():
+	sr_path = 'generated/'
+	if not os.path.exists(sr_path):
+		os.makedirs(sr_path)
+		
 	model = Generator().eval()
 	if torch.cuda.is_available():
 		model.cuda()
@@ -32,4 +37,4 @@ with torch.no_grad():
 
 	out = model(image)
 	out_img = ToPILImage()(out[0].data.cpu())
-	out_img.save('generated/' + basename(normpath(lr)))
+	out_img.save(sr_path + basename(normpath(lr)))

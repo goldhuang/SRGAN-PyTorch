@@ -19,7 +19,7 @@ from torchvision.transforms import Normalize
 from math import log10
 import pytorch_ssim
 
-from model import Generator, Discriminator, TVLoss
+from model import Generator, Discriminator
 
 from utils import TrainDataset, DevDataset, to_image, print_first_parameter, check_grads, get_grads_D, get_grads_G
 
@@ -29,7 +29,7 @@ def main():
 
 	parser = argparse.ArgumentParser(description='SRGAN Train')
 	parser.add_argument('--crop_size', default=128, type=int, help='training images crop size')
-	parser.add_argument('--num_epochs', default=2000, type=int, help='training epoch')
+	parser.add_argument('--num_epochs', default=1000, type=int, help='training epoch')
 	parser.add_argument('--batch_size', default=64, type=int, help='training batch size')
 	parser.add_argument('--train_set', default='data/train', type=str, help='train set path')
 	parser.add_argument('--check_point', type=int, default=-1, help="continue with previous check_point")
