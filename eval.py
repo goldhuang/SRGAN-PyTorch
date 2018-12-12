@@ -19,7 +19,7 @@ from math import log10
 import pandas as pd
 import pytorch_ssim
 
-from preprocess import DevDataset, to_image
+from utils import DevDataset, to_image
 from model import Generator
 
 def main():
