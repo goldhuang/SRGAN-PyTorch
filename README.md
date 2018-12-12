@@ -3,15 +3,16 @@
 A PyTorch implementation of SRGAN based on __Photo-Realistic Single Image Super-Resolution Using a Generative Adversarial Network__ (https://arxiv.org/abs/1609.04802).
 And another PyTorch WGAN-gp implementation of SRGAN referring to __Improved Training of Wasserstein GANs__ (https://arxiv.org/pdf/1704.00028.pdf).
 
+The repo was developed and tested on a Nvidia RTX 2070.
 
 ## Requirements
 
-* Python 3.*
+* Python 3
 * PyTorch
 * torchvision
 * tensorboard_logger
 * tqdm
-* CUDA* - only tested on Nvidia RTX 2070
+* CUDA* - Not tested on CPU
 
 
 ## Datasets
