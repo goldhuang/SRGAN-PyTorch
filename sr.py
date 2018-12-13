@@ -13,7 +13,7 @@ from model import Generator
 
 parser = argparse.ArgumentParser(description='SR single image')
 parser.add_argument('--lr', type=str, help='test image path')
-parser.add_argument('--m', default='cp/netG_GAN_gpu.pth', type=str, help='model')
+parser.add_argument('--m', default='cp/netG_SRWGANGP_gpu.pth', type=str, help='model')
 opt = parser.parse_args()
 
 lr = opt.lr
