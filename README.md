@@ -56,15 +56,13 @@ See more parameters in sr.py.
 
 __Bicubic / SRResNet / SRGAN / SRWGAN-GP / Original__
 
-### WGAN-gp
-
-<img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/results/2.png">
+<img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/results/5.png">
 <img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/results/3.png">
 <img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/results/4.png">
-<img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/results/5.png">
 <img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/results/6.png">
 <img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/results/7.png">
 <img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/results/8.png">
 <img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/results/9.png">
 <img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/results/10.png">
 <img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/results/11.png">
+<img src="https://github.com/goldhuang/SRGAN-PyTorch/blob/master/results/2.png">
