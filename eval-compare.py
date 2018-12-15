@@ -52,14 +52,12 @@ def main():
 
 		val_bar = tqdm(val_loader)
 		dev_images = []
-		for val_lr, _, val_hr in val_bar:
+		for val_lr, val_bic, val_hr in val_bar:
 			batch_size = val_lr.size(0)
 
-			lr = Variable(val_lr)
-			hr = Variable(val_hr)
 			if torch.cuda.is_available():
-				lr = lr.cuda()
-				hr = hr.cuda()
+				lr = val_lr.cuda()
+				hr = val_hr.cuda()
 				
 			netG.load_state_dict(torch.load(m0))	
 			sr0 = netG(lr)
@@ -72,16 +70,16 @@ def main():
 			
 			# Avoid out of memory crash on 8G GPU
 			if len(dev_images) < 80 :
-				dev_images.extend([to_image()(hr.data.cpu().squeeze(0)), to_image()(sr1.data.cpu().squeeze(0)), to_image()(sr0.data.cpu().squeeze(0)), to_image()(sr_baseline.data.cpu().squeeze(0))])
+				dev_images.extend([to_image()(val_bic.data.cpu().squeeze(0)), to_image()(sr_baseline.data.cpu().squeeze(0)), to_image()(sr0.data.cpu().squeeze(0)), to_image()(sr1.data.cpu().squeeze(0)), to_image()(hr.data.cpu().squeeze(0))])
 	
 		dev_images = torch.stack(dev_images)
-		dev_images = torch.chunk(dev_images, dev_images.size(0) // 4)
+		dev_images = torch.chunk(dev_images, dev_images.size(0) // 5)
 
 		dev_save_bar = tqdm(dev_images, desc='[saving images]')
 		index = 1
 		for image in dev_save_bar:
-			image = utils.make_grid(image, nrow=4, padding=5)
-			utils.save_image(image, out_path + 'epoch_index_%d.png' % (index), padding=5)
+			image = utils.make_grid(image, nrow=5, padding=5)
+			utils.save_image(image, out_path + '%d.png' % (index), padding=5)
 			index += 1
 			
 if __name__ == '__main__':
