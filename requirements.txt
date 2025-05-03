@@ -1,0 +1,16 @@
+# Core dependencies
+torch==2.5.1
+torchvision==0.20.1
+Pillow==10.3.0
+numpy>=1.24.0
+
+# Web app
+streamlit==1.38.0
+
+# Training & evaluation utilities
+tqdm>=4.65.0
+tensorboard_logger>=0.1.0
+pytorch_ssim>=0.1
+
+# Image processing
+scikit-image>=0.19.0

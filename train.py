@@ -1,4 +1,5 @@
 import os
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 import argparse
 import time
 import numpy as np
@@ -151,25 +152,36 @@ def main():
 			logits_real = netD(real_img_hr)
 			logits_fake = netD(netG(lowres).detach())
 			
-			# Lable smoothing
-			real = torch.tensor(torch.rand(logits_real.size())*0.25 + 0.85)
-			fake = torch.tensor(torch.rand(logits_fake.size())*0.15)
+			# # Lable smoothing
+			# real = torch.tensor(torch.rand(logits_real.size())*0.25 + 0.85)
+			# fake = torch.tensor(torch.rand(logits_fake.size())*0.15)
 			
-			# Lable flipping
-			prob = (torch.rand(logits_real.size()) < 0.05)
+			# # Lable flipping
+			# prob = (torch.rand(logits_real.size()) < 0.05)
+
+			# Fix label smoothing (replace lines 155-156)
+			real = (torch.rand(logits_real.size())*0.25 + 0.85).to(logits_real.device)
+			fake = (torch.rand(logits_fake.size())*0.15).to(logits_fake.device)
+
+			# Label flipping (replace lines 158-167)
+			prob = (torch.rand(logits_real.size()) < 0.05).to(logits_real.device)
 			
 			#print ('logits real size : ' + str(logits_real.size()))
 			#print ('logits fake size : ' + str(logits_fake.size()))
 			
-			if torch.cuda.is_available():
-				real = real.cuda()
-				fake = fake.cuda()
-				prob = prob.cuda()
+			# if torch.cuda.is_available():
+			# 	real = real.cuda()
+			# 	fake = fake.cuda()
+			# 	prob = prob.cuda()
 				
 			real_clone = real.clone()
 			real[prob] = fake[prob]
 			fake[prob] = real_clone[prob]
-            
+
+			# Ensure values are within [0,1] range
+			real = torch.clamp(real, 0.0, 1.0)
+			fake = torch.clamp(fake, 0.0, 1.0)
+						
 			d_loss = bce(logits_real, real) + bce(logits_fake, fake)
 			
 			cache['d_loss'] += d_loss.item()

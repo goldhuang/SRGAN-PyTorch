@@ -31,7 +31,9 @@ class TrainDataset(Dataset):
         super(TrainDataset, self).__init__()
         self.image_filenames = [join(dataset_dir, x) for x in listdir(dataset_dir) if is_image_file(x)]
         crop_size = calculate_valid_crop_size(crop_size, upscale_factor)
-        self.hr_preprocess = Compose([CenterCrop(384), RandomCrop(crop_size), ToTensor()])
+        # Change 384 to a smaller value based on your image sizes
+        # For example 96 or 128 instead of 384
+        self.hr_preprocess = Compose([CenterCrop(96), RandomCrop(crop_size), ToTensor()])
         self.lr_preprocess = Compose([ToPILImage(), Resize(crop_size // upscale_factor, interpolation=Image.BICUBIC), ToTensor()])
 
     def __getitem__(self, index):
